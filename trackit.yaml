@@ -1,0 +1,10 @@
+data: "./data"
+accounts:
+  - boa:
+    headers:
+      - Posted Date
+      - Reference Number
+      - Payee
+      - Address
+      - Amount
+
