@@ -1,9 +1,0 @@
-commands:
-  - name: init
-    description: "Initialize the configuration from a YAML file"
-    flags:
-      - name: config
-        shorthand: c
-        default: "config.yaml"
-        description: "Path to the YAML configuration file"
-

@@ -1,4 +1,3 @@
-data: "./data"
 accounts:
   - name: boa
     headers:
@@ -7,3 +6,4 @@ accounts:
       - Payee
       - Address
       - Amount
+data: "./data"
