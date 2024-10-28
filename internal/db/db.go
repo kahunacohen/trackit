@@ -79,14 +79,14 @@ func validateDateDir(name string) bool {
 	return len(year) == 4
 }
 
-func validateFileName(name string, conf *config.Config) bool {
-	targetFileName := strings.Replace(strings.ToLower(conf.Accounts[0].Name), " ", "_", -1) + ".csv"
-	fmt.Println(targetFileName)
-	var found bool
+func validateFileName(fileName string, conf *config.Config) bool {
 	for _, account := range conf.Accounts {
-
+		targetFileName := strings.Replace(strings.ToLower(account.Name), " ", "_", -1) + ".csv"
+		if targetFileName == fileName {
+			return true
+		}
 	}
-	return true
+	return false
 }
 
 func InitTransactions(conf *config.Config, db *sql.DB) error {
