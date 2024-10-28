@@ -9,7 +9,7 @@ import (
 
 type Account struct {
 	Name    string
-	Headers []string
+	Headers map[string]string
 }
 type Config struct {
 	Accounts   []Account

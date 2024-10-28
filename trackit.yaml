@@ -1,11 +1,9 @@
 accounts:
   - name: Bank of America
     headers:
-      - Posted Date
-      - Reference Number
-      - Payee
-      - Address
-      - Amount
+      Posted Date: transaction_date
+      Payee: counter_party
+      Amount: amount
 categories:
   - household
   - professional education

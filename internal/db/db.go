@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/kahunacohen/trackit/internal/config"
 )
@@ -25,9 +26,9 @@ func InitSchema(accounts []config.Account, db *sql.DB) error {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		account_id INTEGER NOT NULL,
 		category_id INTEGER NOT NULL,
-		description TEXT,
+		counter_party TEXT NOT NULL,
 		amount REAL NOT NULL,
-		transaction_date DATETIME NOT NULL,
+		date DATETIME NOT NULL,
 		FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
 		FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 	);`
@@ -45,18 +46,18 @@ func InitSchema(accounts []config.Account, db *sql.DB) error {
 }
 
 type Transaction struct {
-	Date        string
-	Description *string
-	Amount      float64
-	Category    *string
+	Amount       float64
+	Category     *string
+	CounterParty string
+	Date         time.Time
 }
 type Account struct {
 	Name         string
 	Transactions []Transaction
 }
 type Month struct {
-	YearMonth string
 	Accounts  []Account
+	YearMonth string
 }
 type TransactionData struct {
 	Months []Month

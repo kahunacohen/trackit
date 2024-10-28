@@ -29,27 +29,26 @@ to quickly create a Cobra application.`,
 		homeDir, _ := os.UserHomeDir()
 		dbPath := filepath.Join(homeDir, "trackit.db")
 
-		// Open a SQLite database file
 		db, err := database.GetDB(dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
+		log.Println("created database")
 		defer db.Close()
 		conf, err := config.ParseConfig("./trackit.yaml")
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Println("parsed configuration file")
 		if err = database.InitSchema(conf.Accounts, db); err != nil {
-			log.Fatalf("error initializing accounts: %v", err)
+			log.Fatalf("error initializing schema: %v", err)
 		}
+		log.Println("initialized schema")
 		if err = database.InitTransactions(conf, db); err != nil {
 			log.Fatalf("error initializing accounts: %v", err)
 		}
-
-		// Use the database (e.g., creating tables, inserting data, querying)
-		// if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY, amount REAL, category TEXT);`); err != nil {
-		// 	log.Fatalf("Failed to create table: %v", err)
-		// }
+		log.Println("intialized transactions")
+		log.Println("succesfully completed initialization")
 	},
 }
 
