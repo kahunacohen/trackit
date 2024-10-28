@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/kahunacohen/trackit/internal/config"
@@ -66,22 +67,31 @@ func validateDateDir(name string) bool {
 		return false
 	}
 	month := split[0]
+	m, err := strconv.Atoi(month)
+	if err != nil {
+		return false
+	}
+	if m < 1 || m > 12 {
+		return false
+	}
 	year := split[1]
-	// validate month and year.
-	return true
-
+	return len(year) == 4
 }
+
 func InitTransactions(conf *config.Config, db *sql.DB) error {
 	entries, err := os.ReadDir(conf.Data)
 	if err != nil {
 		return err
 	}
+	transactionData := TransactionData{}
 	for _, entry := range entries {
 		name := entry.Name()
 		validName := validateDateDir(name)
 		if !validName {
 			return fmt.Errorf("Month directory '%s' is invalid. Must be mm-yyyy", name)
 		}
+		transactionData.Months = append(transactionData.Months, ))
+
 	}
 	return nil
 }
