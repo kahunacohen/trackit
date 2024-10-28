@@ -1,5 +1,5 @@
 accounts:
-  - name: boa
+  - name: Bank of America
     headers:
       - Posted Date
       - Reference Number
@@ -10,5 +10,5 @@ categories:
   - household
   - professional education
   - mortgage
-  
+
 data: "./data"

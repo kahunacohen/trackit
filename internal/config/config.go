@@ -8,6 +8,7 @@ import (
 )
 
 type Account struct {
+	Name    string
 	Headers []string
 }
 type Config struct {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -78,19 +79,42 @@ func validateDateDir(name string) bool {
 	return len(year) == 4
 }
 
+func validateFileName(name string, conf *config.Config) bool {
+	targetFileName := strings.Replace(strings.ToLower(conf.Accounts[0].Name), " ", "_", -1) + ".csv"
+	fmt.Println(targetFileName)
+	var found bool
+	for _, account := range conf.Accounts {
+
+	}
+	return true
+}
+
 func InitTransactions(conf *config.Config, db *sql.DB) error {
-	entries, err := os.ReadDir(conf.Data)
+	dateEntries, err := os.ReadDir(conf.Data)
 	if err != nil {
 		return err
 	}
-	transactionData := TransactionData{}
-	for _, entry := range entries {
-		name := entry.Name()
-		validName := validateDateDir(name)
+	// transactionData := TransactionData{}
+	for _, dateEntry := range dateEntries {
+		dateName := dateEntry.Name()
+		validName := validateDateDir(dateName)
 		if !validName {
-			return fmt.Errorf("Month directory '%s' is invalid. Must be mm-yyyy", name)
+			return fmt.Errorf("Month directory '%s' is invalid. Must be mm-yyyy", dateName)
 		}
-		transactionData.Months = append(transactionData.Months, ))
+		fileEntries, err := os.ReadDir(filepath.Join(conf.Data, dateName))
+		if err != nil {
+			return err
+		}
+		if len(fileEntries) == 0 {
+			return fmt.Errorf("month directory '%s' contains no CSV files", dateName)
+		}
+		for _, fileEntry := range fileEntries {
+			fileName := fileEntry.Name()
+			validFileName := validateFileName(fileName, conf)
+			if !validFileName {
+				return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", fileName)
+			}
+		}
 
 	}
 	return nil
