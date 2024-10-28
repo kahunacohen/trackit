@@ -18,7 +18,7 @@ import (
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize tracking.",
+	Short: "Initialize tracking by parsing trackit.yaml and data directory.",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
