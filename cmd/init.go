@@ -4,16 +4,17 @@ Copyright © 2024 Aaron Cohen <aaroncohendev@gmail.com>
 package cmd
 
 import (
-	_ "embed"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
+	"github.com/kahunacohen/trackit/internal/config"
+
+	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/spf13/cobra"
+	_ "modernc.org/sqlite"
 )
-
-//go:embed assets/trackit.db
-var dbFile []byte
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -26,13 +27,28 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("init called")
-		if _, err := os.Stat("./trackit.db"); os.IsNotExist(err) {
-			err := os.WriteFile("trackit.db", dbFile, 0644)
-			if err != nil {
-				log.Fatalf("problem writing to db file: %w", err)
-			}
+		homeDir, _ := os.UserHomeDir()
+		dbPath := filepath.Join(homeDir, "trackit.db")
+
+		// Open a SQLite database file
+		db, err := database.GetDB(dbPath)
+		if err != nil {
+			log.Fatalf("Failed to open database: %v", err)
 		}
+		defer db.Close()
+		conf, err := config.ParseConfig("./trackit.yaml")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err = database.InitSchema(conf.Accounts, db); err != nil {
+			log.Fatalf("error initializing accounts: %v", err)
+		}
+
+		// Use the database (e.g., creating tables, inserting data, querying)
+		// if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY, amount REAL, category TEXT);`); err != nil {
+		// 	log.Fatalf("Failed to create table: %v", err)
+		// }
+		fmt.Println("Database initialized at:", dbPath)
 	},
 }
 

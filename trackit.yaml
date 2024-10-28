@@ -6,4 +6,9 @@ accounts:
       - Payee
       - Address
       - Amount
+categories:
+  - household
+  - professional education
+  - mortgage
+  
 data: "./data"
