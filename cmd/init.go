@@ -4,7 +4,6 @@ Copyright © 2024 Aaron Cohen <aaroncohendev@gmail.com>
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -43,12 +42,14 @@ to quickly create a Cobra application.`,
 		if err = database.InitSchema(conf.Accounts, db); err != nil {
 			log.Fatalf("error initializing accounts: %v", err)
 		}
+		if err = database.InitTransactions(conf, db); err != nil {
+			log.Fatalf("error initializing accounts: %v", err)
+		}
 
 		// Use the database (e.g., creating tables, inserting data, querying)
 		// if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS expenses (id INTEGER PRIMARY KEY, amount REAL, category TEXT);`); err != nil {
 		// 	log.Fatalf("Failed to create table: %v", err)
 		// }
-		fmt.Println("Database initialized at:", dbPath)
 	},
 }
 
