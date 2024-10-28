@@ -44,10 +44,14 @@ to quickly create a Cobra application.`,
 			log.Fatalf("error initializing schema: %v", err)
 		}
 		log.Println("initialized schema")
+		if err = database.InitAccounts(conf, db); err != nil {
+			log.Fatalf("error initializing accounts: %v", err)
+		}
+		log.Println("initialized accounts")
 		if err = database.InitTransactions(conf, db); err != nil {
 			log.Fatalf("error initializing accounts: %v", err)
 		}
-		log.Println("intialized transactions")
+		log.Println("initialized transactions")
 		log.Println("succesfully completed initialization")
 	},
 }
