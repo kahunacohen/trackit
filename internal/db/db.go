@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,13 +11,14 @@ import (
 	"time"
 
 	"github.com/kahunacohen/trackit/internal/config"
+	"golang.org/x/exp/maps"
 )
 
 func GetDB(pathToDBFile string) (*sql.DB, error) {
 	return sql.Open("sqlite", pathToDBFile)
 }
 
-func InitSchema(accounts []config.Account, db *sql.DB) error {
+func InitSchema(db *sql.DB) error {
 	createAccountTableSQL := `CREATE TABLE IF NOT EXISTS accounts 
 		(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);`
 	if _, err := db.Exec(createAccountTableSQL); err != nil {
@@ -69,9 +71,9 @@ func validateDateDir(name string) bool {
 	return len(year) == 4
 }
 func validateFileName(fileName string, conf *config.Config) bool {
-	for _, account := range conf.Accounts {
-		targetFileName := strings.Replace(strings.ToLower(account.Name), " ", "_", -1) + ".csv"
-		if targetFileName == fileName {
+	for accountName := range conf.Accounts {
+		// targetFileName := strings.Replace(strings.ToLower(accountName), " ", "_", -1) + ".csv"
+		if accountName+".csv" == fileName {
 			return true
 		}
 	}
@@ -79,16 +81,16 @@ func validateFileName(fileName string, conf *config.Config) bool {
 }
 
 func InitAccounts(conf *config.Config, db *sql.DB) error {
-	for _, account := range conf.Accounts {
+	for accountName := range conf.Accounts {
 		// Does the account exist already? If not, insert it
 		var count int
 		query := "SELECT COUNT(*) FROM accounts WHERE name = ?"
-		err := db.QueryRow(query, account.Name).Scan(&count)
+		err := db.QueryRow(query, accountName).Scan(&count)
 		if err != nil {
 			return err
 		}
 		if count == 0 {
-			_, err := db.Exec("INSERT INTO accounts (name) VALUES (?)", account.Name)
+			_, err := db.Exec("INSERT INTO accounts (name) VALUES (?)", accountName)
 			if err != nil {
 				return err
 			}
@@ -98,7 +100,7 @@ func InitAccounts(conf *config.Config, db *sql.DB) error {
 }
 
 func InitTransactions(conf *config.Config, db *sql.DB) error {
-
+	// var transactions []Transaction
 	dateEntries, err := os.ReadDir(conf.Data)
 	if err != nil {
 		return err
@@ -109,7 +111,8 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 		if !validName {
 			return fmt.Errorf("month directory '%s' is invalid. Must be mm-yyyy", dateName)
 		}
-		fileEntries, err := os.ReadDir(filepath.Join(conf.Data, dateName))
+		monthPath := filepath.Join(conf.Data, dateName)
+		fileEntries, err := os.ReadDir(monthPath)
 		if err != nil {
 			return err
 		}
@@ -122,6 +125,29 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 			if !validFileName {
 				return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", fileName)
 			}
+			filePath := filepath.Join(monthPath, fileName)
+			file, err := os.Open(filePath)
+			if err != nil {
+				return fmt.Errorf("error opening %s: %w", filePath, err)
+			}
+			defer file.Close()
+			reader := csv.NewReader(file)
+			records, err := reader.ReadAll()
+			if err != nil {
+				return fmt.Errorf("error reading %s: %w", filePath, err)
+			}
+			if len(records) < 2 {
+				return fmt.Errorf("there are less than 2 rows for file: %s", fileName)
+			}
+			headersFromFile := records[0]
+			dataRows := records[1:]
+			bankAccountFromFile := strings.Replace(fileName, ".csv", "", 1)
+			bankAccountHeadersFromConfig := maps.Keys(conf.Accounts[bankAccountFromFile].Headers)
+			// check if headers in file match headers in config yaml.
+			fmt.Println(bankAccountHeadersFromConfig)
+			fmt.Println("headers in CSV")
+			fmt.Println(headersFromFile)
+			fmt.Println(len(dataRows))
 		}
 
 	}

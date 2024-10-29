@@ -1,5 +1,5 @@
 accounts:
-  - name: Bank of America
+  bank_of_america:
     headers:
       Posted Date: transaction_date
       Payee: counter_party
@@ -10,3 +10,4 @@ categories:
   - mortgage
 
 data: "./data"
+

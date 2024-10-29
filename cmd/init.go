@@ -40,7 +40,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 		log.Println("parsed configuration file")
-		if err = database.InitSchema(conf.Accounts, db); err != nil {
+		if err = database.InitSchema(db); err != nil {
 			log.Fatalf("error initializing schema: %v", err)
 		}
 		log.Println("initialized schema")
