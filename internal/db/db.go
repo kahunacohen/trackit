@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -139,15 +140,23 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 			if len(records) < 2 {
 				return fmt.Errorf("there are less than 2 rows for file: %s", fileName)
 			}
-			headersFromFile := records[0]
-			dataRows := records[1:]
+			headersInFile := records[0]
+			// dataRows := records[1:]
 			bankAccountFromFile := strings.Replace(fileName, ".csv", "", 1)
-			bankAccountHeadersFromConfig := maps.Keys(conf.Accounts[bankAccountFromFile].Headers)
-			// check if headers in file match headers in config yaml.
-			fmt.Println(bankAccountHeadersFromConfig)
-			fmt.Println("headers in CSV")
-			fmt.Println(headersFromFile)
-			fmt.Println(len(dataRows))
+			headersInConfig := maps.Keys(conf.Accounts[bankAccountFromFile].Headers)
+			// check if headers config at least all exist in file headers. It could
+			// be that there are headers in the file that don't exist in config and
+			// and that's ok.
+			for _, headerInConfig := range headersInConfig {
+				if !slices.Contains(headersInFile, headerInConfig) {
+					return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, filePath)
+				}
+			}
+
+			// fmt.Println(headersInConfig)
+			// fmt.Println("headers in CSV")
+			// fmt.Println(headersInFile)
+			// fmt.Println(len(dataRows))
 		}
 
 	}
