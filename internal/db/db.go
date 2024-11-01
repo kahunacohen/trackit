@@ -52,7 +52,7 @@ type Transaction struct {
 	Amount       float64
 	Category     *string
 	CounterParty string
-	Date         time.Time
+	Date         string
 }
 
 func validateDateDir(name string) bool {
@@ -100,6 +100,23 @@ func InitAccounts(conf *config.Config, db *sql.DB) error {
 	return nil
 }
 
+func parseDate(date string) (*string, error) {
+	layout := "01/02/2006"
+	t, err := time.Parse(layout, date)
+	if err != nil {
+		return nil, err
+	}
+	tStr := t.Format("2006-01-02 15:04:05")
+	return &tStr, nil
+}
+func parseAmount(amount string) (*float64, error) {
+	ret, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return nil, err
+	}
+	return &ret, nil
+}
+
 func InitTransactions(conf *config.Config, db *sql.DB) error {
 	// var transactions []Transaction
 	dateEntries, err := os.ReadDir(conf.Data)
@@ -141,7 +158,7 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("there are less than 2 rows for file: %s", fileName)
 			}
 			headersInFile := records[0]
-			// dataRows := records[1:]
+			dataRows := records[1:]
 			bankAccountFromFile := strings.Replace(fileName, ".csv", "", 1)
 			headersInConfig := maps.Keys(conf.Accounts[bankAccountFromFile].Headers)
 			// check if headers config at least all exist in file headers. It could
@@ -152,11 +169,21 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, filePath)
 				}
 			}
-
 			// fmt.Println(headersInConfig)
-			// fmt.Println("headers in CSV")
 			// fmt.Println(headersInFile)
-			// fmt.Println(len(dataRows))
+			for _, row := range dataRows {
+				date, err := parseDate(row[0])
+				if err != nil {
+					return fmt.Errorf("error parsing date %s: %v", *date, err)
+				}
+				amount, err := parseAmount(row[4])
+				if err != nil {
+					return fmt.Errorf("error parsing amount: %f", *amount)
+				}
+				// transaction := Transaction{Date: *date}
+				fmt.Println(*amount)
+			}
+
 		}
 
 	}
