@@ -50,7 +50,7 @@ func InitSchema(db *sql.DB) error {
 
 type Transaction struct {
 	Amount       float64
-	Category     *string
+	Category     string
 	CounterParty string
 	Date         string
 }
@@ -118,7 +118,6 @@ func parseAmount(amount string) (*float64, error) {
 }
 
 func InitTransactions(conf *config.Config, db *sql.DB) error {
-	// var transactions []Transaction
 	dateEntries, err := os.ReadDir(conf.Data)
 	if err != nil {
 		return err
@@ -180,8 +179,8 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				if err != nil {
 					return fmt.Errorf("error parsing amount: %f", *amount)
 				}
-				// transaction := Transaction{Date: *date}
-				fmt.Println(*amount)
+				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[2], Category: row[5]}
+				fmt.Println(transaction)
 			}
 
 		}

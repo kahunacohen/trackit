@@ -2,7 +2,9 @@ accounts:
   bank_of_america:
     headers:
       Posted Date: transaction_date
+      Reference Number: ~
       Payee: counter_party
+      Address: ~
       Amount: amount
 categories:
   - household
