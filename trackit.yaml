@@ -1,15 +1,19 @@
 accounts:
   bank_of_america:
     headers:
-      Posted Date: transaction_date
-      Reference Number: ~
-      Payee: counter_party
-      Address: ~
-      Amount: amount
+      - name: Posted Date
+        table: transaction_date
+      - name: Reference Number
+        table: ~
+      - name: Payee
+        table: counter_party
+      - name: Address
+        table: ~
+      - name: Amount
+        table: amount
 categories:
   - household
   - professional education
   - mortgage
 
 data: "./data"
-

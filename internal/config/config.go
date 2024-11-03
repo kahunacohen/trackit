@@ -8,7 +8,7 @@ import (
 )
 
 type Account struct {
-	Headers map[string]string
+	Headers []map[string]string
 }
 type Config struct {
 	Accounts   map[string]Account
