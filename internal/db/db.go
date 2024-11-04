@@ -19,31 +19,55 @@ func GetDB(pathToDBFile string) (*sql.DB, error) {
 }
 
 func InitSchema(db *sql.DB) error {
-	createAccountTableSQL := `CREATE TABLE IF NOT EXISTS accounts 
-		(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);`
-	if _, err := db.Exec(createAccountTableSQL); err != nil {
+	tx, err := db.Begin()
+	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	createAccountTableSQL := `CREATE TABLE IF NOT EXISTS accounts 
+	(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);`
+	if _, err := tx.Exec(createAccountTableSQL); err != nil {
+		return err
+	}
+
+	createFileTableSQL := `CREATE TABLE IF NOT EXISTS files
+		(hash TEXT PRIMARY KEY, name TEXT NOT NULL);`
+
+	if _, err := tx.Exec(createFileTableSQL); err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	createTransactionTableSQL := `CREATE TABLE IF NOT EXISTS transactions (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		account_id INTEGER NOT NULL,
-		category_id INTEGER NOT NULL,
-		counter_party TEXT NOT NULL,
-		amount REAL NOT NULL,
-		date DATETIME NOT NULL,
-		FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
-		FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-	);`
-	if _, err := db.Exec(createTransactionTableSQL); err != nil {
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	account_id INTEGER NOT NULL,
+	category_id INTEGER NOT NULL,
+	counter_party TEXT NOT NULL,
+	amount REAL NOT NULL,
+	date DATETIME NOT NULL,
+	FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
+	FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);`
+
+	if _, err := tx.Exec(createTransactionTableSQL); err != nil {
+		tx.Rollback()
 		return err
 	}
 	createCategoryTableSQL := `CREATE TABLE IF NOT EXISTS categories (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT
 	);`
-	if _, err := db.Exec(createCategoryTableSQL); err != nil {
+	if _, err := tx.Exec(createCategoryTableSQL); err != nil {
+		tx.Rollback()
 		return err
 	}
+	tx.Commit()
 	return nil
 }
 
@@ -140,7 +164,6 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 	// like: {bank_of_america: {date: 0}} etc.
 	// so we can know each bank account's csv structure.
 	accountsToColIndices := conf.ColIndices()
-	fmt.Println(accountsToColIndices)
 	dateEntries, err := os.ReadDir(conf.Data)
 	if err != nil {
 		return err
