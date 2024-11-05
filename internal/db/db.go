@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -18,7 +19,21 @@ func GetDB(pathToDBFile string) (*sql.DB, error) {
 	return sql.Open("sqlite", pathToDBFile)
 }
 
-func InitSchema(db *sql.DB) error {
+func InitSchema(conf *config.Config, db *sql.DB) error {
+	// Delete existing db if it already exists
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	pathToDb := path.Join(homeDir, "trackit.db")
+	fmt.Println(pathToDb)
+	if err, _ := os.Stat(pathToDb); err != nil {
+		fmt.Println("exists!")
+		if err := os.Remove(path.Join(homeDir, "trackit.db")); err != nil {
+			return err
+		}
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -36,13 +51,13 @@ func InitSchema(db *sql.DB) error {
 		return err
 	}
 
-	createFileTableSQL := `CREATE TABLE IF NOT EXISTS files
-		(hash TEXT PRIMARY KEY, name TEXT NOT NULL);`
+	// createFileTableSQL := `CREATE TABLE IF NOT EXISTS files
+	// 	(hash TEXT PRIMARY KEY, name TEXT NOT NULL);`
 
-	if _, err := tx.Exec(createFileTableSQL); err != nil {
-		tx.Rollback()
-		return err
-	}
+	// if _, err := tx.Exec(createFileTableSQL); err != nil {
+	// 	tx.Rollback()
+	// 	return err
+	// }
 
 	createTransactionTableSQL := `CREATE TABLE IF NOT EXISTS transactions (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
