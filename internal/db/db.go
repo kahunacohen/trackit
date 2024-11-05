@@ -26,9 +26,7 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 		return err
 	}
 	pathToDb := path.Join(homeDir, "trackit.db")
-	fmt.Println(pathToDb)
 	if err, _ := os.Stat(pathToDb); err != nil {
-		fmt.Println("exists!")
 		if err := os.Remove(path.Join(homeDir, "trackit.db")); err != nil {
 			return err
 		}
@@ -155,25 +153,6 @@ func parseAmount(amount string) (*float64, error) {
 	return &ret, nil
 }
 
-// Returns a map of this form:
-// {accountName: {"transaction_date": 0, "counter_party": 3, "amount": 4}}
-// This dymamically tells us for each account what column index in the CSV file maps to what
-// database table.
-func getColIndexes(conf *config.Config) map[string]map[string]int {
-	accountToColIndices := make(map[string]map[string]int)
-	for accountName, account := range conf.Accounts {
-		colIndexMap := make(map[string]int)
-		for i, headerMap := range account.Headers {
-			tableName := headerMap["table"]
-			if tableName == "transaction_date" || tableName == "counter_party" || tableName == "amount" {
-				colIndexMap[tableName] = i
-			}
-		}
-		accountToColIndices[accountName] = colIndexMap
-	}
-	return accountToColIndices
-}
-
 func InitTransactions(conf *config.Config, db *sql.DB) error {
 	// First create a map of account name to db table names to indices
 	// like: {bank_of_america: {date: 0}} etc.
@@ -248,6 +227,12 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				}
 				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]], Category: row[categoryIndex]}
 				fmt.Println(transaction)
+				var bankAccountId int64
+				err = db.QueryRow("SELECT id FROM accounts where name=?", bankAccountNameFromFile).Scan(&bankAccountId)
+				if err != nil {
+					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
+				}
+				fmt.Println(bankAccountId)
 			}
 
 		}
