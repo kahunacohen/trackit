@@ -15,10 +15,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// initCmd represents the init command
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize tracking by parsing trackit.yaml and data directory.",
+var loadCmd = &cobra.Command{
+	Use:   "load",
+	Short: "Load data",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -57,7 +56,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(loadCmd)
 
 	// Here you will define your flags and configuration settings.
 
