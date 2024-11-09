@@ -16,6 +16,11 @@ type Config struct {
 	Data       string
 }
 
+type Category struct {
+	id   int64
+	name string
+}
+
 func ParseConfig(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

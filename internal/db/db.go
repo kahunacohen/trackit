@@ -216,6 +216,7 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 
 			// Category is always the last column.
 			categoryIndex := len(dataRows[0]) - 1
+			var tx *sql.Tx
 			for _, row := range dataRows {
 				date, err := parseDate(row[colIndices["transaction_date"]])
 				if err != nil {
@@ -226,15 +227,45 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("error parsing amount: %f", *amount)
 				}
 				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]], Category: row[categoryIndex]}
-				fmt.Println(transaction)
 				var bankAccountId int64
 				err = db.QueryRow("SELECT id FROM accounts where name=?", bankAccountNameFromFile).Scan(&bankAccountId)
 				if err != nil {
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
-				fmt.Println(bankAccountId)
-			}
+				tx, err := db.Begin()
+				if err != nil {
+					return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
+				}
 
+				// Check if category exists already
+				var category config.Category
+				err = db.QueryRow("SELECT * FROM categories WHERE name=?", transaction.Category).Scan(&category)
+				if err != nil {
+					if err == sql.ErrNoRows {
+						fmt.Println("inserting category", transaction.Category)
+						_, err = tx.Exec("INSERT INTO categories (name) VALUES (?)", transaction.Category)
+						if err != nil {
+							tx.Rollback()
+							return fmt.Errorf("error inserting category: %w", err)
+						}
+					} else {
+						return fmt.Errorf("error checking if category exists: %w", err)
+					}
+				} else {
+					// category already exists in db
+				}
+
+				_, err = tx.Exec("INSERT INTO transactions (date, amount, counter_party, category) VALUES (?, ?, ?, ?)",
+					transaction.Date, transaction.Amount, transaction.CounterParty, transaction.Category)
+				if err != nil {
+					// tx.Rollback()
+					return fmt.Errorf("error inserting transaction: %w", err)
+				}
+			}
+			err = tx.Commit()
+			if err != nil {
+				return fmt.Errorf("error committing transactions to database: %w", err)
+			}
 		}
 
 	}
