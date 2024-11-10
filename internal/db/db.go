@@ -252,15 +252,24 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				if err != nil {
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
-				tx, err := db.Begin()
+				categoryName := getCategory(conf, transaction.CounterParty)
+				var categoryId int
+				if categoryName != nil {
+					fmt.Println("get the ID for")
+					fmt.Println(*categoryName)
+					err := db.QueryRow("SELECT id FROM categories WHERE name=?", *categoryName).Scan(&categoryId)
+					if err != nil {
+						return fmt.Errorf("error getting category ID: %w", err)
+					}
+				}
+				tx, err = db.Begin()
 				if err != nil {
 					return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
 				}
-
-				_, err = tx.Exec("INSERT INTO transactions (date, amount, counter_party, category) VALUES (?, ?, ?, ?)",
-					transaction.Date, transaction.Amount, transaction.CounterParty, transaction.Category)
+				_, err = tx.Exec("INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?)",
+					bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
 				if err != nil {
-					// tx.Rollback()
+					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)
 				}
 			}
@@ -270,6 +279,17 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 			}
 		}
 
+	}
+	return nil
+}
+
+func getCategory(conf *config.Config, counterPayer string) *string {
+	for categoryName, counterPayers := range conf.Categories {
+		for _, counterPayerFromConf := range counterPayers {
+			if strings.Contains(counterPayer, counterPayerFromConf) {
+				return &categoryName
+			}
+		}
 	}
 	return nil
 }
