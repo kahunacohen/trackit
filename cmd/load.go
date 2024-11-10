@@ -47,10 +47,15 @@ to quickly create a Cobra application.`,
 			log.Fatalf("error initializing accounts: %v", err)
 		}
 		log.Println("initialized accounts")
-		if err = database.InitTransactions(conf, db); err != nil {
-			log.Fatalf("error initializing accounts: %v", err)
+
+		if err = database.InitCategories(conf, db); err != nil {
+			log.Fatalf("error initializing categories: %v", err)
 		}
-		log.Println("initialized transactions")
+		log.Println("initialized categories")
+		// if err = database.InitTransactions(conf, db); err != nil {
+		// 	log.Fatalf("error initializing accounts: %v", err)
+		// }
+		// log.Println("initialized transactions")
 		log.Println("succesfully completed initialization")
 	},
 }

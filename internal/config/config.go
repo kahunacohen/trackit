@@ -12,13 +12,8 @@ type Account struct {
 }
 type Config struct {
 	Accounts   map[string]Account
-	Categories []string
+	Categories map[string][]string
 	Data       string
-}
-
-type Category struct {
-	id   int64
-	name string
 }
 
 func ParseConfig(path string) (*Config, error) {

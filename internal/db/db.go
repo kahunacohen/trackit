@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/kahunacohen/trackit/internal/config"
+	"golang.org/x/exp/maps"
 )
 
 func GetDB(pathToDBFile string) (*sql.DB, error) {
@@ -136,6 +137,25 @@ func InitAccounts(conf *config.Config, db *sql.DB) error {
 	return nil
 }
 
+func InitCategories(conf *config.Config, db *sql.DB) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, category := range maps.Keys(conf.Categories) {
+		_, err := tx.Exec("INSERT INTO categories (name) VALUES (?)", category)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return nil
+}
+
 func parseDate(date string) (*string, error) {
 	layout := "01/02/2006"
 	t, err := time.Parse(layout, date)
@@ -235,24 +255,6 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				tx, err := db.Begin()
 				if err != nil {
 					return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
-				}
-
-				// Check if category exists already
-				var category config.Category
-				err = db.QueryRow("SELECT * FROM categories WHERE name=?", transaction.Category).Scan(&category)
-				if err != nil {
-					if err == sql.ErrNoRows {
-						fmt.Println("inserting category", transaction.Category)
-						_, err = tx.Exec("INSERT INTO categories (name) VALUES (?)", transaction.Category)
-						if err != nil {
-							tx.Rollback()
-							return fmt.Errorf("error inserting category: %w", err)
-						}
-					} else {
-						return fmt.Errorf("error checking if category exists: %w", err)
-					}
-				} else {
-					// category already exists in db
 				}
 
 				_, err = tx.Exec("INSERT INTO transactions (date, amount, counter_party, category) VALUES (?, ?, ?, ?)",

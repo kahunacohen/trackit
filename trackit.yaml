@@ -12,8 +12,8 @@ accounts:
       - name: Amount
         table: amount
 categories:
-  - household
-  - professional education
-  - mortgage
+  groceries:
+    - MEETMAN
+    - RAMI LEVI
 
 data: "./data"
