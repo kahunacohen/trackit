@@ -1,5 +1,7 @@
+base_currency: ILS
 accounts:
   bank_of_america:
+    currency: USD
     headers:
       - name: Posted Date
         table: transaction_date

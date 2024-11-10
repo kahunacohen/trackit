@@ -8,12 +8,14 @@ import (
 )
 
 type Account struct {
-	Headers []map[string]string
+	Currency string
+	Headers  []map[string]string
 }
 type Config struct {
-	Accounts   map[string]Account
-	Categories map[string][]string
-	Data       string
+	BaseCurrency string
+	Accounts     map[string]Account
+	Categories   map[string][]string
+	Data         string
 }
 
 func ParseConfig(path string) (*Config, error) {

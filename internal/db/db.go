@@ -45,7 +45,7 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 	}()
 
 	createAccountTableSQL := `CREATE TABLE IF NOT EXISTS accounts 
-	(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL);`
+	(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, currency TEXT NOT NULL);`
 	if _, err := tx.Exec(createAccountTableSQL); err != nil {
 		return err
 	}
@@ -142,7 +142,8 @@ func InitAccounts(conf *config.Config, db *sql.DB) error {
 			return err
 		}
 		if count == 0 {
-			_, err := db.Exec("INSERT INTO accounts (name) VALUES (?)", accountName)
+			_, err := db.Exec("INSERT INTO accounts (name, currency) VALUES (?, ?)",
+				accountName, conf.Accounts[accountName].Currency)
 			if err != nil {
 				return err
 			}
