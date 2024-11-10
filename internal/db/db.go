@@ -50,14 +50,6 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 		return err
 	}
 
-	// createFileTableSQL := `CREATE TABLE IF NOT EXISTS files
-	// 	(hash TEXT PRIMARY KEY, name TEXT NOT NULL);`
-
-	// if _, err := tx.Exec(createFileTableSQL); err != nil {
-	// 	tx.Rollback()
-	// 	return err
-	// }
-
 	createTransactionTableSQL := `CREATE TABLE IF NOT EXISTS transactions (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	account_id INTEGER NOT NULL,
@@ -78,6 +70,28 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 		name TEXT
 	);`
 	if _, err := tx.Exec(createCategoryTableSQL); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	createTransactionViewSQL := `
+CREATE VIEW transactions_view AS
+SELECT 
+    accounts.id AS account_id,
+    accounts.name AS account_name, 
+    transactions.id AS transaction_id, 
+	transactions.date AS date, 
+    transactions.counter_party AS counter_party, 
+    transactions.amount AS amount, 
+    categories.name AS category_name
+FROM 
+    transactions
+JOIN 
+    accounts ON transactions.account_id = accounts.id
+LEFT JOIN 
+    categories ON transactions.category_id = categories.id
+ORDER BY date;`
+	if _, err := tx.Exec(createTransactionViewSQL); err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -236,7 +250,10 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 
 			// Category is always the last column.
 			categoryIndex := len(dataRows[0]) - 1
-			var tx *sql.Tx
+			tx, err := db.Begin()
+			if err != nil {
+				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
+			}
 			for _, row := range dataRows {
 				date, err := parseDate(row[colIndices["transaction_date"]])
 				if err != nil {
@@ -255,16 +272,10 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				categoryName := getCategory(conf, transaction.CounterParty)
 				var categoryId int
 				if categoryName != nil {
-					fmt.Println("get the ID for")
-					fmt.Println(*categoryName)
 					err := db.QueryRow("SELECT id FROM categories WHERE name=?", *categoryName).Scan(&categoryId)
 					if err != nil {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
-				}
-				tx, err = db.Begin()
-				if err != nil {
-					return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
 				}
 				_, err = tx.Exec("INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?)",
 					bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)

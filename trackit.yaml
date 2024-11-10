@@ -15,5 +15,9 @@ categories:
   groceries:
     - MEETMAN
     - RAMI LEVI
-
+  entertainment:
+    - Amazon Prime
+    - Netflix
+  eating out:
+    - SHAWARMA
 data: "./data"
