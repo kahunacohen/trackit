@@ -213,6 +213,9 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 		}
 		for _, fileEntry := range fileEntries {
 			fileName := fileEntry.Name()
+			if fileName == "rate.yaml" || fileName == "rate.yml" {
+				continue
+			}
 			validFileName := validateFileName(fileName, conf)
 			if !validFileName {
 				return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", fileName)
