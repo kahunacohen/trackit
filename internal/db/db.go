@@ -14,7 +14,18 @@ import (
 
 	"github.com/kahunacohen/trackit/internal/config"
 	"golang.org/x/exp/maps"
+	"sigs.k8s.io/yaml"
 )
+
+type ExchangeRate struct {
+	From string  `json:"from"`
+	To   string  `json:"to"`
+	Rate float64 `json:"rate"`
+}
+
+type ExchangeRatesWrapper struct {
+	ExchangeRates []ExchangeRate `json:"exchange_rates"`
+}
 
 func GetDB(pathToDBFile string) (*sql.DB, error) {
 	return sql.Open("sqlite", pathToDBFile)
@@ -242,6 +253,26 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
 			headersInConfig := conf.Headers(bankAccountNameFromFile)
 			colIndices := accountsToColIndices[bankAccountNameFromFile]
+			bankAccountCurrency := conf.Accounts[bankAccountNameFromFile].Currency
+			var exchangeRateConfig ExchangeRatesWrapper
+			var exchangeRateNum *float64
+			if bankAccountCurrency != conf.BaseCurrency {
+				rateFilePath := filepath.Join(monthPath, "rate.yaml")
+				rateFileData, err := os.ReadFile(rateFilePath)
+				if err != nil {
+					return fmt.Errorf("could not read rate file at %s: %w", rateFilePath, err)
+				}
+				if err := yaml.Unmarshal(rateFileData, &exchangeRateConfig); err != nil {
+					return fmt.Errorf("error parsing rate file: %w", err)
+				}
+				for _, rate := range exchangeRateConfig.ExchangeRates {
+					if rate.From == bankAccountCurrency {
+						exchangeRateNum = &rate.Rate
+					}
+				}
+				fmt.Println(*exchangeRateNum)
+
+			}
 
 			// check if headers config at least all exist in file headers. It could
 			// be that there are headers in the file that don't exist in config and
@@ -266,6 +297,11 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				amount, err := parseAmount(row[colIndices["amount"]])
 				if err != nil {
 					return fmt.Errorf("error parsing amount: %f", *amount)
+				}
+
+				if exchangeRateNum != nil {
+					fmt.Println(*amount)
+					fmt.Println(*amount * *exchangeRateNum)
 				}
 				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]], Category: row[categoryIndex]}
 				var bankAccountId int64
