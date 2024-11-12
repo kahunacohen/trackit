@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -270,7 +271,6 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 						exchangeRateNum = &rate.Rate
 					}
 				}
-				fmt.Println(*exchangeRateNum)
 
 			}
 
@@ -299,9 +299,10 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("error parsing amount: %f", *amount)
 				}
 
-				if exchangeRateNum != nil {
-					fmt.Println(*amount)
-					fmt.Println(*amount * *exchangeRateNum)
+				if exchangeRateNum != nil && amount != nil {
+					targetAmount := *amount * *exchangeRateNum
+					roundedAmount := math.Round(targetAmount*100) / 100
+					amount = &roundedAmount
 				}
 				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]], Category: row[categoryIndex]}
 				var bankAccountId int64
