@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/kahunacohen/trackit/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -56,8 +57,16 @@ func init() {
 			}
 		}
 		if account != "" {
-			// @TODO get DB, refactor so that db module handles getting db.
+			conf, err := config.ParseConfig("./trackit.yaml")
+			if err != nil {
+				return fmt.Errorf("error parsing config: %v", err)
+			}
 			fmt.Println("validate bank account is valid")
+			_, ok := conf.Accounts[account]
+			if !ok {
+				return fmt.Errorf("invalid account specified: %s. Check your config for valid account keys", account)
+			}
+			fmt.Println("account name is valid")
 		}
 
 		return nil
