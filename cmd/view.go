@@ -8,6 +8,7 @@ import (
 	"regexp"
 
 	"github.com/kahunacohen/trackit/internal/config"
+	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/spf13/cobra"
 )
 
@@ -61,12 +62,18 @@ func init() {
 			if err != nil {
 				return fmt.Errorf("error parsing config: %v", err)
 			}
-			fmt.Println("validate bank account is valid")
 			_, ok := conf.Accounts[account]
 			if !ok {
 				return fmt.Errorf("invalid account specified: %s. Check your config for valid account keys", account)
 			}
-			fmt.Println("account name is valid")
+		}
+
+		if account != "" && date == "" {
+			fmt.Println("get account transactions")
+			transactions, err := database.GetAccountTransactions(account)
+			if err != nil {
+				return fmt.Errorf("error getting account transactions: %w", err)
+			}
 		}
 
 		return nil
