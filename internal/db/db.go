@@ -143,7 +143,10 @@ func validateFileName(fileName string, conf *config.Config) bool {
 	}
 	return false
 }
-
+func GetAccountTransactions(accountName string) ([]Transaction, error) {
+	var transactions []Transaction
+	return transactions, nil
+}
 func InitAccounts(conf *config.Config, db *sql.DB) error {
 	for accountName := range conf.Accounts {
 		// Does the account exist already? If not, insert it

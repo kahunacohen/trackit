@@ -74,6 +74,7 @@ func init() {
 			if err != nil {
 				return fmt.Errorf("error getting account transactions: %w", err)
 			}
+			fmt.Println(transactions)
 		}
 
 		return nil
