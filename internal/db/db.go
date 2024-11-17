@@ -143,8 +143,20 @@ func validateFileName(fileName string, conf *config.Config) bool {
 	}
 	return false
 }
-func GetAccountTransactions(accountName string) ([]Transaction, error) {
+func GetAccountTransactions(db *sql.DB, accountName string) ([]Transaction, error) {
 	var transactions []Transaction
+	rows, err := db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=?",
+		accountName)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var transaction Transaction
+		if err := rows.Scan(&transaction.Date, &transaction.CounterParty, &transaction.Amount, &transaction.Category); err != nil {
+			return nil, err // Handle scan error
+		}
+		transactions = append(transactions, transaction)
+	}
 	return transactions, nil
 }
 func InitAccounts(conf *config.Config, db *sql.DB) error {

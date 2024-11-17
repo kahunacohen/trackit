@@ -5,6 +5,9 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/kahunacohen/trackit/internal/config"
@@ -70,9 +73,15 @@ func init() {
 
 		if account != "" && date == "" {
 			fmt.Println("get account transactions")
-			transactions, err := database.GetAccountTransactions(account)
+			homeDir, _ := os.UserHomeDir()
+			dbPath := filepath.Join(homeDir, "trackit.db")
+			db, err := database.GetDB(dbPath)
 			if err != nil {
-				return fmt.Errorf("error getting account transactions: %w", err)
+				log.Fatalf("Failed to open database: %v", err)
+			}
+			transactions, err := database.GetAccountTransactions(db, account)
+			if err != nil {
+				return fmt.Errorf("error getting transactions: %w", err)
 			}
 			fmt.Println(transactions)
 		}
