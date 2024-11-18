@@ -113,7 +113,7 @@ ORDER BY date;`
 
 type Transaction struct {
 	Amount       float64
-	Category     string
+	Category     *string
 	CounterParty string
 	Date         string
 }
@@ -319,7 +319,7 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 					roundedAmount := math.Round(targetAmount*100) / 100
 					amount = &roundedAmount
 				}
-				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]], Category: row[categoryIndex]}
+				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]], Category: &row[categoryIndex]}
 				var bankAccountId int64
 				err = db.QueryRow("SELECT id FROM accounts where name=?", bankAccountNameFromFile).Scan(&bankAccountId)
 				if err != nil {

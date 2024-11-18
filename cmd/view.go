@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/config"
 	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/spf13/cobra"
@@ -83,7 +84,20 @@ func init() {
 			if err != nil {
 				return fmt.Errorf("error getting transactions: %w", err)
 			}
-			fmt.Println(transactions)
+			t := table.NewWriter()
+			t.SetStyle(table.StyleLight)
+			t.SetOutputMirror(os.Stdout)
+			t.AppendHeader(table.Row{"Date", "Payee", "Amount", "Category"})
+			for _, transaction := range transactions {
+				var cat string
+				if transaction.Category == nil {
+					cat = "-"
+				} else {
+					cat = *transaction.Category
+				}
+				t.AppendRow([]interface{}{transaction.Date, transaction.CounterParty, transaction.Amount, cat})
+			}
+			t.Render()
 		}
 
 		return nil
