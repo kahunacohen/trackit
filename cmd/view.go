@@ -73,7 +73,6 @@ func init() {
 		}
 
 		if account != "" && date == "" {
-			fmt.Println("get account transactions")
 			homeDir, _ := os.UserHomeDir()
 			dbPath := filepath.Join(homeDir, "trackit.db")
 			db, err := database.GetDB(dbPath)
@@ -87,7 +86,8 @@ func init() {
 			t := table.NewWriter()
 			t.SetStyle(table.StyleLight)
 			t.SetOutputMirror(os.Stdout)
-			t.AppendHeader(table.Row{"Date", "Payee", "Amount", "Category"})
+			t.AppendHeader(table.Row{"Date", "Payee", "Category", "Amount"})
+			var total float64
 			for _, transaction := range transactions {
 				var cat string
 				if transaction.Category == nil {
@@ -95,8 +95,11 @@ func init() {
 				} else {
 					cat = *transaction.Category
 				}
-				t.AppendRow([]interface{}{transaction.Date, transaction.CounterParty, transaction.Amount, cat})
+				t.AppendRow([]interface{}{transaction.Date, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
+				total += transaction.Amount
 			}
+			t.AppendFooter(table.Row{"", "", "Total", database.RoundAmount(total)})
+
 			t.Render()
 		}
 

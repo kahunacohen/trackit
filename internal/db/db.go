@@ -28,6 +28,10 @@ type ExchangeRatesWrapper struct {
 	ExchangeRates []ExchangeRate `json:"exchange_rates"`
 }
 
+func RoundAmount(amount float64) float64 {
+	return math.Round(amount*100) / 100
+}
+
 func GetDB(pathToDBFile string) (*sql.DB, error) {
 	return sql.Open("sqlite", pathToDBFile)
 }
@@ -92,7 +96,7 @@ SELECT
     accounts.id AS account_id,
     accounts.name AS account_name, 
     transactions.id AS transaction_id, 
-	transactions.date AS date, 
+	strftime('%m-%Y', transactions.date) AS date, 
     transactions.counter_party AS counter_party, 
     transactions.amount AS amount, 
     categories.name AS category_name
@@ -102,7 +106,7 @@ JOIN
     accounts ON transactions.account_id = accounts.id
 LEFT JOIN 
     categories ON transactions.category_id = categories.id
-ORDER BY date;`
+ORDER BY date DESC;`
 	if _, err := tx.Exec(createTransactionViewSQL); err != nil {
 		tx.Rollback()
 		return err
@@ -316,7 +320,7 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 
 				if exchangeRateNum != nil && amount != nil {
 					targetAmount := *amount * *exchangeRateNum
-					roundedAmount := math.Round(targetAmount*100) / 100
+					roundedAmount := RoundAmount(targetAmount)
 					amount = &roundedAmount
 				}
 				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]], Category: &row[categoryIndex]}
