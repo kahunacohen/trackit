@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/config"
@@ -72,40 +73,47 @@ func init() {
 			}
 		}
 
-		if account != "" && date == "" {
-			homeDir, _ := os.UserHomeDir()
-			dbPath := filepath.Join(homeDir, "trackit.db")
-			db, err := database.GetDB(dbPath)
-			if err != nil {
-				log.Fatalf("Failed to open database: %v", err)
-			}
-			transactions, err := database.GetAccountTransactions(db, &account)
-			if err != nil {
-				return fmt.Errorf("error getting transactions: %w", err)
-			}
-			RenderTransactionTable(transactions)
+		homeDir, _ := os.UserHomeDir()
+		dbPath := filepath.Join(homeDir, "trackit.db")
+		db, err := database.GetDB(dbPath)
+		if err != nil {
+			log.Fatalf("Failed to open database: %v", err)
 		}
-
+		transactions, err := database.GetAccountTransactions(db, account, date)
+		if err != nil {
+			return fmt.Errorf("error getting transactions: %w", err)
+		}
+		err = RenderTransactionTable(transactions)
+		if err != nil {
+			return fmt.Errorf("error rendering transactions")
+		}
 		return nil
 	}
 }
 
-func RenderTransactionTable(transactions []database.Transaction) {
+func RenderTransactionTable(transactions []database.Transaction) error {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Date", "Payee", "Category", "Amount"})
 	var total float64
 	for _, transaction := range transactions {
+		parsedTime, err := time.Parse(time.RFC3339, transaction.Date)
+		if err != nil {
+			return err
+
+		}
+		formattedDate := parsedTime.Format("01-02-2006")
 		var cat string
 		if transaction.Category == nil {
 			cat = "-"
 		} else {
 			cat = *transaction.Category
 		}
-		t.AppendRow([]interface{}{transaction.Date, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
+		t.AppendRow([]interface{}{formattedDate, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
 		total += transaction.Amount
 	}
 	t.AppendFooter(table.Row{"", "", "Total", database.RoundAmount(total)})
 	t.Render()
+	return nil
 }

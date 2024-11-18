@@ -96,7 +96,7 @@ SELECT
     accounts.id AS account_id,
     accounts.name AS account_name, 
     transactions.id AS transaction_id, 
-	strftime('%m-%Y', transactions.date) AS date, 
+	transactions.date AS date, 
     transactions.counter_party AS counter_party, 
     transactions.amount AS amount, 
     categories.name AS category_name
@@ -147,10 +147,24 @@ func validateFileName(fileName string, conf *config.Config) bool {
 	}
 	return false
 }
-func GetAccountTransactions(db *sql.DB, accountName *string) ([]Transaction, error) {
+func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Transaction, error) {
 	var transactions []Transaction
-	rows, err := db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=?",
-		accountName)
+	var rows *sql.Rows
+	var err error
+
+	// both account and date are set
+	if accountName != "" && date != "" {
+		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=?",
+			accountName, date)
+		// account name is set but not date
+	} else if accountName != "" && date == "" {
+		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=?",
+			accountName)
+		// date is set but not account
+	} else {
+		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE strftime('%m-%Y', date)=?",
+			date)
+	}
 	if err != nil {
 		return nil, err
 	}
