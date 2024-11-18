@@ -28,6 +28,11 @@ type ExchangeRatesWrapper struct {
 	ExchangeRates []ExchangeRate `json:"exchange_rates"`
 }
 
+type CategoryAgregation struct {
+	Category string
+	Total    float64
+}
+
 func RoundAmount(amount float64) float64 {
 	return math.Round(amount*100) / 100
 }
@@ -152,8 +157,10 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 	var rows *sql.Rows
 	var err error
 
-	// both account and date are set
-	if accountName != "" && date != "" {
+	// account and date are not set
+	if accountName == "" && date == "" {
+		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view;")
+	} else if accountName != "" && date != "" { // Both are set
 		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=?",
 			accountName, date)
 		// account name is set but not date
@@ -177,6 +184,23 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 	}
 	return transactions, nil
 }
+func GetCategoryAggregation(db *sql.DB, account string, date string) ([]CategoryAgregation, error) {
+	rows, err := db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name;")
+	if err != nil {
+		return nil, err
+	}
+	var aggregates []CategoryAgregation
+	for rows.Next() {
+		var aggregate CategoryAgregation
+		if err := rows.Scan(&aggregate.Category, &aggregate.Total); err != nil {
+			return nil, err
+		}
+		aggregate.Total = RoundAmount(aggregate.Total)
+		aggregates = append(aggregates, aggregate)
+	}
+	return aggregates, nil
+}
+
 func InitAccounts(conf *config.Config, db *sql.DB) error {
 	for accountName := range conf.Accounts {
 		// Does the account exist already? If not, insert it
