@@ -92,16 +92,23 @@ func init() {
 			if err != nil {
 				return fmt.Errorf("error aggregating by category: %w", err)
 			}
-			fmt.Println(aggregations)
-			err = RenderAggregateTable(aggregations)
-			if err != nil {
-				return fmt.Errorf("error rendering aggregate table: %w", err)
-			}
+			RenderAggregateTable(aggregations)
 		} else {
 			return fmt.Errorf("invalid aggregation '%s'", aggregateBy)
 		}
 		return nil
 	}
+}
+
+func RenderAggregateTable(aggregates []database.CategoryAgregation) {
+	t := table.NewWriter()
+	t.SetStyle(table.StyleLight)
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Category", "Total"})
+	for _, aggregate := range aggregates {
+		t.AppendRow([]interface{}{aggregate.Category, aggregate.Total})
+	}
+	t.Render()
 }
 
 func RenderTransactionTable(transactions []database.Transaction) error {

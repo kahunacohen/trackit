@@ -185,7 +185,7 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 	return transactions, nil
 }
 func GetCategoryAggregation(db *sql.DB, account string, date string) ([]CategoryAgregation, error) {
-	rows, err := db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name;")
+	rows, err := db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY amount;")
 	if err != nil {
 		return nil, err
 	}
