@@ -147,7 +147,7 @@ func validateFileName(fileName string, conf *config.Config) bool {
 	}
 	return false
 }
-func GetAccountTransactions(db *sql.DB, accountName string) ([]Transaction, error) {
+func GetAccountTransactions(db *sql.DB, accountName *string) ([]Transaction, error) {
 	var transactions []Transaction
 	rows, err := db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=?",
 		accountName)

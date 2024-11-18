@@ -79,30 +79,33 @@ func init() {
 			if err != nil {
 				log.Fatalf("Failed to open database: %v", err)
 			}
-			transactions, err := database.GetAccountTransactions(db, account)
+			transactions, err := database.GetAccountTransactions(db, &account)
 			if err != nil {
 				return fmt.Errorf("error getting transactions: %w", err)
 			}
-			t := table.NewWriter()
-			t.SetStyle(table.StyleLight)
-			t.SetOutputMirror(os.Stdout)
-			t.AppendHeader(table.Row{"Date", "Payee", "Category", "Amount"})
-			var total float64
-			for _, transaction := range transactions {
-				var cat string
-				if transaction.Category == nil {
-					cat = "-"
-				} else {
-					cat = *transaction.Category
-				}
-				t.AppendRow([]interface{}{transaction.Date, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
-				total += transaction.Amount
-			}
-			t.AppendFooter(table.Row{"", "", "Total", database.RoundAmount(total)})
-
-			t.Render()
+			RenderTransactionTable(transactions)
 		}
 
 		return nil
 	}
+}
+
+func RenderTransactionTable(transactions []database.Transaction) {
+	t := table.NewWriter()
+	t.SetStyle(table.StyleLight)
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Date", "Payee", "Category", "Amount"})
+	var total float64
+	for _, transaction := range transactions {
+		var cat string
+		if transaction.Category == nil {
+			cat = "-"
+		} else {
+			cat = *transaction.Category
+		}
+		t.AppendRow([]interface{}{transaction.Date, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
+		total += transaction.Amount
+	}
+	t.AppendFooter(table.Row{"", "", "Total", database.RoundAmount(total)})
+	t.Render()
 }
