@@ -185,7 +185,18 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 	return transactions, nil
 }
 func GetCategoryAggregation(db *sql.DB, account string, date string) ([]CategoryAgregation, error) {
-	rows, err := db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY amount;")
+	var rows *sql.Rows
+	var err error
+	if account == "" && date == "" {
+		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY amount;")
+	} else if account != "" && date == "" {
+		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? GROUP BY category_name ORDER BY amount;", account)
+	} else if account == "" && date != "" {
+		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY amount;", date)
+	} else {
+		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY amount;",
+			account, date)
+	}
 	if err != nil {
 		return nil, err
 	}
