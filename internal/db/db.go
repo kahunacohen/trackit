@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -188,13 +189,13 @@ func GetCategoryAggregation(db *sql.DB, account string, date string) ([]Category
 	var rows *sql.Rows
 	var err error
 	if account == "" && date == "" {
-		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY amount;")
+		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY total_amount;")
 	} else if account != "" && date == "" {
-		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? GROUP BY category_name ORDER BY amount;", account)
+		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? GROUP BY category_name ORDER BY total_amount;", account)
 	} else if account == "" && date != "" {
-		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY amount;", date)
+		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY total_amount;", date)
 	} else {
-		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY amount;",
+		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY total_amount;",
 			account, date)
 	}
 	if err != nil {
@@ -351,8 +352,6 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				}
 			}
 
-			// Category is always the last column.
-			categoryIndex := len(dataRows[0]) - 1
 			tx, err := db.Begin()
 			if err != nil {
 				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
@@ -372,13 +371,16 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 					roundedAmount := RoundAmount(targetAmount)
 					amount = &roundedAmount
 				}
-				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]], Category: &row[categoryIndex]}
+				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]]}
 				var bankAccountId int64
 				err = db.QueryRow("SELECT id FROM accounts where name=?", bankAccountNameFromFile).Scan(&bankAccountId)
 				if err != nil {
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
-				categoryName := getCategory(conf, transaction.CounterParty)
+				categoryName, err := getCategory(conf, transaction.CounterParty)
+				if err != nil {
+					return err
+				}
 				var categoryId int
 				if categoryName != nil {
 					err := db.QueryRow("SELECT id FROM categories WHERE name=?", *categoryName).Scan(&categoryId)
@@ -403,13 +405,18 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 	return nil
 }
 
-func getCategory(conf *config.Config, counterPayer string) *string {
+func getCategory(conf *config.Config, counterPayer string) (*string, error) {
 	for categoryName, counterPayers := range conf.Categories {
-		for _, counterPayerFromConf := range counterPayers {
-			if strings.Contains(counterPayer, counterPayerFromConf) {
-				return &categoryName
+		for _, regexpStr := range counterPayers {
+			// @TODO In efficent to compile so many times...
+			re, err := regexp.Compile(regexpStr)
+			if err != nil {
+				return nil, fmt.Errorf("error getting category: %w", err)
+			}
+			if re.MatchString(counterPayer) {
+				return &categoryName, nil
 			}
 		}
 	}
-	return nil
+	return nil, nil
 }

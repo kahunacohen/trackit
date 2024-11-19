@@ -15,13 +15,11 @@ accounts:
         table: amount
 categories:
   groceries:
-    - MEETMAN
-    - RAMI LEVI
-    - wine
+    - (meetman|rami levi|wine)
   entertainment:
-    - Amazon Prime
-    - NETFLIX
-    - SFARIM
+    - (amazon|netflix|sfarim)
   eating out:
     - SHAWARMA
+  clothing:
+    - (?i)bgoodshilat
 data: "./data"
