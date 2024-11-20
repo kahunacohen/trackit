@@ -1,0 +1,10 @@
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y ca-certificates
+RUN mkdir /app
+WORKDIR /app
+COPY trackit /usr/local/bin/trackit
+RUN mkdir data
+COPY ./data/ ./data
+COPY trackit.yaml .
+CMD ["trackit", "load"]
+
