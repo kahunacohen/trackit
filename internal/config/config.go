@@ -8,14 +8,15 @@ import (
 )
 
 type Account struct {
-	Currency string
-	Headers  []map[string]string
+	Currency   string              `yaml:"currency"`
+	DateLayout string              `yaml:"date_layout"`
+	Headers    []map[string]string `yaml:"headers"`
 }
 type Config struct {
-	BaseCurrency string
-	Accounts     map[string]Account
-	Categories   map[string][]string
-	Data         string
+	BaseCurrency string              `yaml:"base_currency"`
+	Accounts     map[string]Account  `yaml:"accounts"`
+	Categories   map[string][]string `yaml:"categories"`
+	Data         string              `yaml:"data"`
 }
 
 func ParseConfig(path string) (*Config, error) {

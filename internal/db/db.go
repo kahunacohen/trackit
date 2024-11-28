@@ -348,6 +348,7 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 			// and that's ok.
 			for _, headerInConfig := range headersInConfig {
 				if !slices.Contains(headersInFile, headerInConfig) {
+					fmt.Println(headerInConfig)
 					return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, filePath)
 				}
 			}
@@ -358,6 +359,9 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 			}
 			for _, row := range dataRows {
 				date, err := parseDate(row[colIndices["transaction_date"]])
+				if date == nil {
+					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
+				}
 				if err != nil {
 					return fmt.Errorf("error parsing date %s: %v", *date, err)
 				}

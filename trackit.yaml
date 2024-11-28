@@ -2,6 +2,7 @@ base_currency: ILS
 accounts:
   bank_of_america:
     currency: USD
+    date_layout: 01/02/2006
     headers:
       - name: Posted Date
         table: transaction_date
@@ -13,6 +14,26 @@ accounts:
         table: ~
       - name: Amount
         table: amount
+
+  leumi_checking:
+    currency: ILS
+    date_layout: 02/01/2006	
+    headers:
+      - name: תאריך
+        table: transaction_date
+      - name: תאריך ערך
+        table: ~
+      - name: תיאור
+        table: counter_party
+      - name: אסמכתא
+        table: ~
+      - name: בחובה
+        table: ~
+      - name: בזכות
+        table: ~
+      - name: היתרה בש"ח
+        table: ~
+      
 categories:
   groceries:
     - (meetman|rami levi|wine)
