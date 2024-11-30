@@ -9,7 +9,7 @@ import (
 
 type Account struct {
 	Currency   string              `yaml:"currency"`
-	DateLayout string              `yaml:"date_layout"`
+	DateLayout string              `yaml:"date_layout"` // Just use the yaml tag, no json tag
 	Headers    []map[string]string `yaml:"headers"`
 }
 type Config struct {
@@ -24,10 +24,15 @@ func ParseConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not read config file at %s: %w", path, err)
 	}
+
 	var config Config
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("error parsing config: %w", err)
 	}
+
+	// Print the specific date layout you're interested in
+	fmt.Printf("Date Layout for Bank of America Account: '%s'\n", config.Accounts["bank_of_america"].DateLayout)
+
 	return &config, nil
 }
 

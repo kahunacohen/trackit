@@ -1,39 +1,37 @@
 base_currency: ILS
 accounts:
   bank_of_america:
+    DateLayout: 01/02/2006
     currency: USD
-    date_layout: 01/02/2006
     headers:
       - name: Posted Date
         table: transaction_date
       - name: Reference Number
-        table: ~
+        table: null
       - name: Payee
         table: counter_party
       - name: Address
-        table: ~
+        table: null
       - name: Amount
         table: amount
-
   leumi_checking:
     currency: ILS
-    date_layout: 02/01/2006	
+    DateLayout: 02/01/2006
     headers:
       - name: תאריך
         table: transaction_date
       - name: תאריך ערך
-        table: ~
+        table: null
       - name: תיאור
         table: counter_party
       - name: אסמכתא
-        table: ~
+        table: null
       - name: בחובה
-        table: ~
+        table: null
       - name: בזכות
-        table: ~
+        table: null
       - name: היתרה בש"ח
-        table: ~
-      
+        table: null
 categories:
   groceries:
     - (meetman|rami levi|wine)
@@ -43,4 +41,4 @@ categories:
     - SHAWARMA
   clothing:
     - (?i)bgoodshilat
-data: "./data"
+data: ./data

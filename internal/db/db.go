@@ -321,7 +321,10 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("file %s has no records", filePath)
 			}
 			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
+			fmt.Println(bankAccountNameFromFile)
 			headersInConfig := conf.Headers(bankAccountNameFromFile)
+			dateLayout := conf.Accounts[bankAccountNameFromFile].DateLayout
+			fmt.Println(dateLayout)
 			colIndices := accountsToColIndices[bankAccountNameFromFile]
 			bankAccountCurrency := conf.Accounts[bankAccountNameFromFile].Currency
 			var exchangeRateConfig ExchangeRatesWrapper
