@@ -252,8 +252,7 @@ func InitCategories(conf *config.Config, db *sql.DB) error {
 	return nil
 }
 
-func parseDate(date string) (*string, error) {
-	layout := "01/02/2006"
+func parseDate(layout string, date string) (*string, error) {
 	t, err := time.Parse(layout, date)
 	if err != nil {
 		return nil, err
@@ -321,10 +320,8 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("file %s has no records", filePath)
 			}
 			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
-			fmt.Println(bankAccountNameFromFile)
 			headersInConfig := conf.Headers(bankAccountNameFromFile)
 			dateLayout := conf.Accounts[bankAccountNameFromFile].DateLayout
-			fmt.Println(dateLayout)
 			colIndices := accountsToColIndices[bankAccountNameFromFile]
 			bankAccountCurrency := conf.Accounts[bankAccountNameFromFile].Currency
 			var exchangeRateConfig ExchangeRatesWrapper
@@ -351,7 +348,6 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 			// and that's ok.
 			for _, headerInConfig := range headersInConfig {
 				if !slices.Contains(headersInFile, headerInConfig) {
-					fmt.Println(headerInConfig)
 					return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, filePath)
 				}
 			}
@@ -361,7 +357,7 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
 			}
 			for _, row := range dataRows {
-				date, err := parseDate(row[colIndices["transaction_date"]])
+				date, err := parseDate(dateLayout, row[colIndices["transaction_date"]])
 				if date == nil {
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
 				}

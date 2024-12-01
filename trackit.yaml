@@ -24,6 +24,8 @@ accounts:
         table: null
       - name: תיאור
         table: counter_party
+      - name: בחובה
+        table: amount
       - name: אסמכתא
         table: null
       - name: בחובה
