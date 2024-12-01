@@ -1,8 +1,7 @@
 base_currency: ILS
 accounts:
   bank_of_america:
-    thousands_separator: ","
-    DateLayout: 01/02/2006
+    date_layout: 01/02/2006
     currency: USD
     headers:
       - name: Posted Date
@@ -18,7 +17,7 @@ accounts:
   leumi_checking:
     thousands_separator: ","
     currency: ILS
-    DateLayout: 02/01/2006
+    date_layout: 02/01/2006
     headers:
       - name: תאריך
         table: transaction_date

@@ -262,8 +262,14 @@ func parseDate(layout string, date string) (*string, error) {
 	tStr := t.Format("2006-01-02 15:04:05")
 	return &tStr, nil
 }
-func parseAmount(amount string) (*float64, error) {
-	ret, err := strconv.ParseFloat(amount, 64)
+func parseAmount(amount string, thousandsSeparator string) (*float64, error) {
+	var amountStr string
+	if thousandsSeparator != "" {
+		amountStr = strings.Replace(amount, thousandsSeparator, "", 1)
+	} else {
+		amountStr = amount
+	}
+	ret, err := strconv.ParseFloat(amountStr, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -368,12 +374,13 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				}
 				var amount *float64
 				fmt.Println(bankAccountNameFromFile)
-				fmt.Printf("'%s'\n", conf.Accounts[bankAccountNameFromFile].ThousandsSeparator)
+				thousandsSeparator := conf.Accounts[bankAccountNameFromFile].ThousandsSeparator
 				depositIndx, depositIndxExists := colIndices["deposit"]
 				withdrawlIndx, withdrawlIndxExists := colIndices["withdrawl"]
 				amountIndx, amountIndxExists := colIndices["amount"]
 				if amountIndxExists {
-					amount, err := parseAmount(row[amountIndx])
+					amountStr := row[amountIndx]
+					amount, err := parseAmount(amountStr, thousandsSeparator)
 					if err != nil {
 						return fmt.Errorf("error parsing amount: %f", *amount)
 					}
@@ -382,20 +389,21 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("must define a withdrawl and deposit column for: %s", filePath)
 					}
 					depositStr := row[depositIndx]
-					deposit, err := parseAmount(depositStr)
+					deposit, err := parseAmount(depositStr, thousandsSeparator)
 					if err != nil {
 						return fmt.Errorf("error parsing deposit amount %s in %s", depositStr, filePath)
 					}
 					withdrawlStr := row[withdrawlIndx]
-					withdrawl, err := parseAmount(withdrawlStr)
+					withdrawl, err := parseAmount(withdrawlStr, thousandsSeparator)
 					if err != nil {
 						return fmt.Errorf("error parsing withdrawl amount %s in %s", withdrawlStr, filePath)
 					}
-					fmt.Println(deposit)
-					fmt.Println(withdrawl)
+					fmt.Println("deposit", *deposit)
+					fmt.Println("withdrawl", *withdrawl)
+					x := *deposit - *withdrawl
+					amount = &x
 
 				}
-				continue
 
 				if exchangeRateNum != nil && amount != nil {
 					targetAmount := *amount * *exchangeRateNum

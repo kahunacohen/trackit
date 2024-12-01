@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"sigs.k8s.io/yaml"
+	"gopkg.in/yaml.v3"
 )
 
 type Account struct {
 	Currency           string              `yaml:"currency"`
-	DateLayout         string              `yaml:"date_layout"` // Just use the yaml tag, no json tag
+	DateLayout         string              `yaml:"date_layout"`
 	Headers            []map[string]string `yaml:"headers"`
 	ThousandsSeparator string              `yaml:"thousands_separator"`
 }
