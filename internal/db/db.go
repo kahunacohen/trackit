@@ -78,6 +78,8 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 	category_id INTEGER NOT NULL,
 	counter_party TEXT NOT NULL,
 	amount REAL NOT NULL,
+	deposit REAL,
+	withdrawl REAL,
 	date DATETIME NOT NULL,
 	FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
 	FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
@@ -364,10 +366,34 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				if err != nil {
 					return fmt.Errorf("error parsing date %s: %v", *date, err)
 				}
-				amount, err := parseAmount(row[colIndices["amount"]])
-				if err != nil {
-					return fmt.Errorf("error parsing amount: %f", *amount)
+				var amount *float64
+				depositIndx, depositIndxExists := colIndices["deposit"]
+				withdrawlIndx, withdrawlIndxExists := colIndices["withdrawl"]
+				amountIndx, amountIndxExists := colIndices["amount"]
+				if amountIndxExists {
+					amount, err := parseAmount(row[amountIndx])
+					if err != nil {
+						return fmt.Errorf("error parsing amount: %f", *amount)
+					}
+				} else {
+					if !depositIndxExists || !withdrawlIndxExists {
+						return fmt.Errorf("must define a withdrawl and deposit column for: %s", filePath)
+					}
+					depositStr := row[depositIndx]
+					deposit, err := parseAmount(depositStr)
+					if err != nil {
+						return fmt.Errorf("error parsing deposit amount %s in %s", depositStr, filePath)
+					}
+					withdrawlStr := row[withdrawlIndx]
+					withdrawl, err := parseAmount(withdrawlStr)
+					if err != nil {
+						return fmt.Errorf("error parsing withdrawl amount %s in %s", withdrawlStr, filePath)
+					}
+					fmt.Println(deposit)
+					fmt.Println(withdrawl)
+
 				}
+				continue
 
 				if exchangeRateNum != nil && amount != nil {
 					targetAmount := *amount * *exchangeRateNum

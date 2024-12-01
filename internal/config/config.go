@@ -42,7 +42,7 @@ func (c *Config) ColIndices() map[string]map[string]int {
 		colIndexMap := make(map[string]int)
 		for i, headerMap := range account.Headers {
 			tableName := headerMap["table"]
-			if tableName == "transaction_date" || tableName == "counter_party" || tableName == "amount" {
+			if tableName == "transaction_date" || tableName == "counter_party" || tableName == "amount" || tableName == "deposit" || tableName == "withdrawl" {
 				colIndexMap[tableName] = i
 			}
 		}

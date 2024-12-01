@@ -7,11 +7,11 @@ accounts:
       - name: Posted Date
         table: transaction_date
       - name: Reference Number
-        table: null
+        table: ~
       - name: Payee
         table: counter_party
       - name: Address
-        table: null
+        table: ~
       - name: Amount
         table: amount
   leumi_checking:
@@ -21,19 +21,19 @@ accounts:
       - name: תאריך
         table: transaction_date
       - name: תאריך ערך
-        table: null
+        table: ~
       - name: תיאור
         table: counter_party
       - name: בחובה
-        table: amount
+        table: deposit
       - name: אסמכתא
-        table: null
+        table: ~
       - name: בחובה
-        table: null
+        table: withdrawl
       - name: בזכות
-        table: null
+        table: deposit
       - name: היתרה בש"ח
-        table: null
+        table: ~
 categories:
   groceries:
     - (meetman|rami levi|wine)
