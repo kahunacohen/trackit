@@ -1,6 +1,7 @@
 base_currency: ILS
 accounts:
   bank_of_america:
+    thousands_separator: ","
     DateLayout: 01/02/2006
     currency: USD
     headers:
@@ -15,6 +16,7 @@ accounts:
       - name: Amount
         table: amount
   leumi_checking:
+    thousands_separator: ","
     currency: ILS
     DateLayout: 02/01/2006
     headers:
@@ -25,11 +27,9 @@ accounts:
       - name: תיאור
         table: counter_party
       - name: בחובה
-        table: deposit
+        table: withdrawl
       - name: אסמכתא
         table: ~
-      - name: בחובה
-        table: withdrawl
       - name: בזכות
         table: deposit
       - name: היתרה בש"ח

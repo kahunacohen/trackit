@@ -367,6 +367,8 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("error parsing date %s: %v", *date, err)
 				}
 				var amount *float64
+				fmt.Println(bankAccountNameFromFile)
+				fmt.Printf("'%s'\n", conf.Accounts[bankAccountNameFromFile].ThousandsSeparator)
 				depositIndx, depositIndxExists := colIndices["deposit"]
 				withdrawlIndx, withdrawlIndxExists := colIndices["withdrawl"]
 				amountIndx, amountIndxExists := colIndices["amount"]

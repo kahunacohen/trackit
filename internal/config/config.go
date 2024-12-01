@@ -8,9 +8,10 @@ import (
 )
 
 type Account struct {
-	Currency   string              `yaml:"currency"`
-	DateLayout string              `yaml:"date_layout"` // Just use the yaml tag, no json tag
-	Headers    []map[string]string `yaml:"headers"`
+	Currency           string              `yaml:"currency"`
+	DateLayout         string              `yaml:"date_layout"` // Just use the yaml tag, no json tag
+	Headers            []map[string]string `yaml:"headers"`
+	ThousandsSeparator string              `yaml:"thousands_separator"`
 }
 type Config struct {
 	BaseCurrency string              `yaml:"base_currency"`
