@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -133,7 +134,9 @@ func RenderTransactionTable(transactions []database.Transaction) error {
 		t.AppendRow([]interface{}{formattedDate, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
 		total += transaction.Amount
 	}
-	t.AppendFooter(table.Row{"", "", "Total", database.RoundAmount(total)})
+	totalStr := strconv.FormatFloat(total, 'f', 2, 64) // 'f' for floating-point format, 2 digits after the decimal
+
+	t.AppendFooter(table.Row{"", "", "Total", totalStr})
 	t.Render()
 	return nil
 }
