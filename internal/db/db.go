@@ -316,6 +316,7 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 			defer file.Close()
 			reader := csv.NewReader(file)
 			records, err := reader.ReadAll()
+
 			if err != nil {
 				return fmt.Errorf("error reading %s: %w", filePath, err)
 			}
@@ -372,45 +373,52 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				if err != nil {
 					return fmt.Errorf("error parsing date %s: %v", *date, err)
 				}
-				var amount *float64
-				fmt.Println(bankAccountNameFromFile)
+				var amount float64
 				thousandsSeparator := conf.Accounts[bankAccountNameFromFile].ThousandsSeparator
 				depositIndx, depositIndxExists := colIndices["deposit"]
 				withdrawlIndx, withdrawlIndxExists := colIndices["withdrawl"]
 				amountIndx, amountIndxExists := colIndices["amount"]
 				if amountIndxExists {
 					amountStr := row[amountIndx]
-					amount, err := parseAmount(amountStr, thousandsSeparator)
+					parsedAmount, err := parseAmount(amountStr, thousandsSeparator)
 					if err != nil {
-						return fmt.Errorf("error parsing amount: %f", *amount)
+						return fmt.Errorf("error parsing amount: %s", amountStr)
 					}
+					if parsedAmount == nil {
+						return fmt.Errorf("parsed amount is nil in: %s", filePath)
+					}
+					amount = *parsedAmount
 				} else {
 					if !depositIndxExists || !withdrawlIndxExists {
 						return fmt.Errorf("must define a withdrawl and deposit column for: %s", filePath)
 					}
 					depositStr := row[depositIndx]
-					deposit, err := parseAmount(depositStr, thousandsSeparator)
+					parsedDeposit, err := parseAmount(depositStr, thousandsSeparator)
 					if err != nil {
 						return fmt.Errorf("error parsing deposit amount %s in %s", depositStr, filePath)
 					}
 					withdrawlStr := row[withdrawlIndx]
-					withdrawl, err := parseAmount(withdrawlStr, thousandsSeparator)
+					parsedWithdrawl, err := parseAmount(withdrawlStr, thousandsSeparator)
 					if err != nil {
 						return fmt.Errorf("error parsing withdrawl amount %s in %s", withdrawlStr, filePath)
 					}
-					fmt.Println("deposit", *deposit)
-					fmt.Println("withdrawl", *withdrawl)
-					x := *deposit - *withdrawl
-					amount = &x
+					if parsedDeposit == nil {
+						return fmt.Errorf("parsed deposit is null in %s", filePath)
+					}
+					if parsedWithdrawl == nil {
+						return fmt.Errorf("parsed withrawl is null in %s", filePath)
+
+					}
+					amount = *parsedDeposit - *parsedWithdrawl
 
 				}
-
-				if exchangeRateNum != nil && amount != nil {
-					targetAmount := *amount * *exchangeRateNum
+				if exchangeRateNum != nil {
+					targetAmount := amount * *exchangeRateNum
 					roundedAmount := RoundAmount(targetAmount)
-					amount = &roundedAmount
+					amount = roundedAmount
 				}
-				transaction := Transaction{Date: *date, Amount: *amount, CounterParty: row[colIndices["counter_party"]]}
+
+				transaction := Transaction{Date: *date, Amount: amount, CounterParty: row[colIndices["counter_party"]]}
 				var bankAccountId int64
 				err = db.QueryRow("SELECT id FROM accounts where name=?", bankAccountNameFromFile).Scan(&bankAccountId)
 				if err != nil {
