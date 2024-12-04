@@ -1,12 +1,13 @@
 package db
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"encoding/csv"
 	"fmt"
+	"io"
 	"math"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -44,16 +45,16 @@ func GetDB(pathToDBFile string) (*sql.DB, error) {
 
 func InitSchema(conf *config.Config, db *sql.DB) error {
 	// Delete existing db if it already exists
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	pathToDb := path.Join(homeDir, "trackit.db")
-	if err, _ := os.Stat(pathToDb); err != nil {
-		if err := os.Remove(path.Join(homeDir, "trackit.db")); err != nil {
-			return err
-		}
-	}
+	// homeDir, err := os.UserHomeDir()
+	// if err != nil {
+	// 	return err
+	// }
+	// pathToDb := path.Join(homeDir, "trackit.db")
+	// if err, _ := os.Stat(pathToDb); err != nil {
+	// 	if err := os.Remove(path.Join(homeDir, "trackit.db")); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -65,6 +66,12 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 			tx.Rollback()
 		}
 	}()
+
+	createFileTableSQL := `CREATE TABLE IF NOT EXISTS files 
+	(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, hash TEXT NOT NULL);`
+	if _, err := tx.Exec(createFileTableSQL); err != nil {
+		return err
+	}
 
 	createAccountTableSQL := `CREATE TABLE IF NOT EXISTS accounts 
 	(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, currency TEXT NOT NULL);`
@@ -276,7 +283,20 @@ func parseAmount(amount string, thousandsSeparator string) (*float64, error) {
 	return &ret, nil
 }
 
-func InitTransactions(conf *config.Config, db *sql.DB) error {
+func computeFileHash(file *os.File) (string, error) {
+	hash := sha256.New()
+	_, err := io.Copy(hash, file)
+	if err != nil {
+		return "", err
+	}
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		return "", fmt.Errorf("error resetting file pointer when trying to compute hash: %w", err)
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
+func ProcessFiles(conf *config.Config, db *sql.DB) error {
 	// First create a map of account name to db table names to indices
 	// like: {bank_of_america: {date: 0}} etc.
 	// so we can know each bank account's csv structure.
@@ -314,6 +334,29 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("error opening %s: %w", filePath, err)
 			}
 			defer file.Close()
+
+			tx, err := db.Begin()
+			if err != nil {
+				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
+			}
+			fileHash, err := computeFileHash(file)
+			if err != nil {
+				return fmt.Errorf("problem hashing file: %w", err)
+			}
+
+			// Check if file has been modified
+			var hashFromDb *string
+			err = db.QueryRow("SELECT hash FROM accounts where name=?", filePath).Scan(&hashFromDb)
+			if err != nil {
+				return fmt.Errorf("error looking up hash from db for %s: %v", filePath, err)
+			}
+			fmt.Println(fileHash)
+			fmt.Println(hashFromDb)
+			_, err = tx.Exec("INSERT INTO files (name, hash) VALUES (?, ?)", filePath, fileHash)
+			if err != nil {
+				return fmt.Errorf("error inserting file hash: %w", err)
+			}
+
 			reader := csv.NewReader(file)
 			records, err := reader.ReadAll()
 
@@ -361,10 +404,6 @@ func InitTransactions(conf *config.Config, db *sql.DB) error {
 				}
 			}
 
-			tx, err := db.Begin()
-			if err != nil {
-				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
-			}
 			for _, row := range dataRows {
 				date, err := parseDate(dateLayout, row[colIndices["transaction_date"]])
 				if date == nil {
