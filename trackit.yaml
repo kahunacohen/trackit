@@ -19,21 +19,25 @@ accounts:
     currency: ILS
     date_layout: 02/01/2006
     headers:
-      - name: תאריך
+      - name: date
         table: transaction_date
-      - name: תאריך ערך
+      - name: value date
         table: ~
-      - name: תיאור
+      - name: description
         table: counter_party
-      - name: בחובה
-        table: withdrawl
-      - name: אסמכתא
+      - name: reference
         table: ~
-      - name: בזכות
+      - name: withdrawl
+        table: withdrawl
+      - name: deposit
         table: deposit
-      - name: היתרה בש"ח
+      - name: balance
+        table: ~
+      - name: remark
         table: ~
 categories:
+  salary:
+    - (MTA Central-Y)
   groceries:
     - (meetman|rami levi|wine)
   entertainment:
