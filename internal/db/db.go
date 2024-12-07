@@ -296,7 +296,7 @@ func computeFileHash(file *os.File) (string, error) {
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
-func ProcessFiles(conf *config.Config, db *sql.DB) error {
+func AddData(conf *config.Config, db *sql.DB) error {
 	// First create a map of account name to db table names to indices
 	// like: {bank_of_america: {date: 0}} etc.
 	// so we can know each bank account's csv structure.
@@ -346,12 +346,20 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 
 			// Check if file has been modified
 			var hashFromDb *string
-			err = db.QueryRow("SELECT hash FROM accounts where name=?", filePath).Scan(&hashFromDb)
+			var fileHasChanged bool
+			err = db.QueryRow("SELECT hash FROM files where name=?", filePath).Scan(&hashFromDb)
 			if err != nil {
-				return fmt.Errorf("error looking up hash from db for %s: %v", filePath, err)
+				if err == sql.ErrNoRows {
+					_, err := db.Exec("INSERT INTO files (name, hash) VALUES (?, ?)", filePath, fileHash)
+					if err != nil {
+						return fmt.Errorf("error inserting initial file hash: %w", err)
+					}
+					fileHasChanged = true
+				} else {
+					return fmt.Errorf("error looking up hash from db for %s: %v", filePath, err)
+				}
 			}
-			fmt.Println(fileHash)
-			fmt.Println(hashFromDb)
+			fmt.Println(fileHasChanged)
 			_, err = tx.Exec("INSERT INTO files (name, hash) VALUES (?, ?)", filePath, fileHash)
 			if err != nil {
 				return fmt.Errorf("error inserting file hash: %w", err)

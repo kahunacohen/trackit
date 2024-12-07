@@ -122,7 +122,6 @@ func RenderTransactionTable(transactions []database.Transaction) error {
 		parsedTime, err := time.Parse(time.RFC3339, transaction.Date)
 		if err != nil {
 			return err
-
 		}
 		formattedDate := parsedTime.Format("01-02-2006")
 		var cat string

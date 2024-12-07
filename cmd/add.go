@@ -1,5 +1,5 @@
 /*
-Copyright © 2024 Aaron Cohen <aaroncohendev@gmail.com>
+Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 */
 package cmd
 
@@ -9,15 +9,14 @@ import (
 	"path/filepath"
 
 	"github.com/kahunacohen/trackit/internal/config"
-
 	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/spf13/cobra"
-	_ "modernc.org/sqlite"
 )
 
-var loadCmd = &cobra.Command{
-	Use:   "load",
-	Short: "Load data",
+// addCmd represents the add command
+var addCmd = &cobra.Command{
+	Use:   "add",
+	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -39,37 +38,23 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 		log.Println("parsed configuration file")
-		if err = database.InitSchema(conf, db); err != nil {
-			log.Fatalf("error initializing schema: %v", err)
+		err = database.AddData(conf, db)
+		if err != nil {
+			log.Fatal(err)
 		}
-		log.Println("initialized schema")
-		if err = database.InitAccounts(conf, db); err != nil {
-			log.Fatalf("error initializing accounts: %v", err)
-		}
-		log.Println("initialized accounts")
-
-		if err = database.InitCategories(conf, db); err != nil {
-			log.Fatalf("error initializing categories: %v", err)
-		}
-		log.Println("initialized categories")
-		if err = database.ProcessFiles(conf, db); err != nil {
-			log.Fatalf("error initializing accounts: %v", err)
-		}
-		log.Println("initialized transactions")
-		log.Println("succesfully completed initialization")
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(loadCmd)
+	rootCmd.AddCommand(addCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// initCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// addCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
