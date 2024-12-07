@@ -39,7 +39,7 @@ categories:
   salary:
     - (MTA Central-Y)
   groceries:
-    - (meetman|rami levi|wine)
+    - (?i)(meetman|rami levi|wine)
   entertainment:
     - (amazon|netflix|sfarim)
   eating out:
