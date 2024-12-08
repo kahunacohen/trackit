@@ -31,13 +31,11 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
-		log.Println("created database")
 		defer db.Close()
 		conf, err := config.ParseConfig("./trackit.yaml")
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("parsed configuration file")
 		err = database.AddData(conf, db)
 		if err != nil {
 			log.Fatal(err)

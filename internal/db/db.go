@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"os"
 	"path/filepath"
@@ -346,25 +347,35 @@ func AddData(conf *config.Config, db *sql.DB) error {
 
 			// Check if file has been modified
 			var hashFromDb *string
-			var fileHasChanged bool
+			var fileShouldBeProcessed bool
+			log.Printf("checking if file %s has been processed\n", filePath)
 			err = db.QueryRow("SELECT hash FROM files where name=?", filePath).Scan(&hashFromDb)
 			if err != nil {
 				if err == sql.ErrNoRows {
+					// The file never had a hash and has never been seen before.
+					log.Printf("file %s has never been processed, insert hash to db\n", filePath)
 					_, err := db.Exec("INSERT INTO files (name, hash) VALUES (?, ?)", filePath, fileHash)
+					hashFromDb = &fileHash
 					if err != nil {
 						return fmt.Errorf("error inserting initial file hash: %w", err)
 					}
-					fileHasChanged = true
+					fileShouldBeProcessed = true
 				} else {
+					// Some other error trying to get hash.
 					return fmt.Errorf("error looking up hash from db for %s: %v", filePath, err)
 				}
 			}
-			fmt.Println(fileHasChanged)
-			_, err = tx.Exec("INSERT INTO files (name, hash) VALUES (?, ?)", filePath, fileHash)
-			if err != nil {
-				return fmt.Errorf("error inserting file hash: %w", err)
+			if hashFromDb == nil {
+				return fmt.Errorf("hash from db for file %s is nil", filePath)
 			}
-
+			if fileHash != *hashFromDb {
+				fileShouldBeProcessed = true
+			}
+			if !fileShouldBeProcessed {
+				log.Printf("file %s has not changed, skip processing\n", filePath)
+				continue
+			}
+			log.Printf("processing file %s\n", filePath)
 			reader := csv.NewReader(file)
 			records, err := reader.ReadAll()
 
