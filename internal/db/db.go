@@ -348,7 +348,6 @@ func AddData(conf *config.Config, db *sql.DB) error {
 			// Check if file has been modified
 			var hashFromDb *string
 			var fileShouldBeProcessed bool
-			log.Printf("checking if file %s has been processed\n", filePath)
 			err = db.QueryRow("SELECT hash FROM files where name=?", filePath).Scan(&hashFromDb)
 			if err != nil {
 				if err == sql.ErrNoRows {
@@ -371,6 +370,8 @@ func AddData(conf *config.Config, db *sql.DB) error {
 			if fileHash != *hashFromDb {
 				fileShouldBeProcessed = true
 			}
+			log.Printf("file hash: %s\n", fileHash)
+			log.Printf("hash in db: %s\n", *hashFromDb)
 			if !fileShouldBeProcessed {
 				log.Printf("file %s has not changed, skip processing\n", filePath)
 				continue
@@ -499,6 +500,11 @@ func AddData(conf *config.Config, db *sql.DB) error {
 					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)
 				}
+			}
+			_, err = tx.Exec("UPDATE files set hash=? WHERE name=?", fileHash, filePath)
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error updating file hash for file: %s: %w", filePath, err)
 			}
 			err = tx.Commit()
 			if err != nil {
