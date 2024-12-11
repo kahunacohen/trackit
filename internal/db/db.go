@@ -45,18 +45,6 @@ func GetDB(pathToDBFile string) (*sql.DB, error) {
 }
 
 func InitSchema(conf *config.Config, db *sql.DB) error {
-	// Delete existing db if it already exists
-	// homeDir, err := os.UserHomeDir()
-	// if err != nil {
-	// 	return err
-	// }
-	// pathToDb := path.Join(homeDir, "trackit.db")
-	// if err, _ := os.Stat(pathToDb); err != nil {
-	// 	if err := os.Remove(path.Join(homeDir, "trackit.db")); err != nil {
-	// 		return err
-	// 	}
-	// }
-
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -81,7 +69,7 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 	}
 
 	createTransactionTableSQL := `CREATE TABLE IF NOT EXISTS transactions (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	id TEXT PRIMARY KEY,
 	account_id INTEGER NOT NULL,
 	category_id INTEGER NOT NULL,
 	counter_party TEXT NOT NULL,
@@ -392,10 +380,12 @@ func AddData(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("file %s has no records", filePath)
 			}
 			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
+			accountFromConf := conf.Accounts[bankAccountNameFromFile]
+
 			headersInConfig := conf.Headers(bankAccountNameFromFile)
-			dateLayout := conf.Accounts[bankAccountNameFromFile].DateLayout
+			dateLayout := accountFromConf.DateLayout
 			colIndices := accountsToColIndices[bankAccountNameFromFile]
-			bankAccountCurrency := conf.Accounts[bankAccountNameFromFile].Currency
+			bankAccountCurrency := accountFromConf.Currency
 			var exchangeRateConfig ExchangeRatesWrapper
 			var exchangeRateNum *float64
 			if bankAccountCurrency != conf.BaseCurrency {
@@ -433,7 +423,7 @@ func AddData(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("error parsing date %s: %v", *date, err)
 				}
 				var amount float64
-				thousandsSeparator := conf.Accounts[bankAccountNameFromFile].ThousandsSeparator
+				thousandsSeparator := accountFromConf.ThousandsSeparator
 				depositIndx, depositIndxExists := colIndices["deposit"]
 				withdrawlIndx, withdrawlIndxExists := colIndices["withdrawl"]
 				amountIndx, amountIndxExists := colIndices["amount"]
@@ -494,6 +484,7 @@ func AddData(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
+
 				_, err = tx.Exec("INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?)",
 					bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
 				if err != nil {
