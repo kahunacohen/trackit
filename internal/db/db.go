@@ -375,13 +375,22 @@ func AddData(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("there are less than 2 rows for file: %s", fileName)
 			}
 			headersInFile := records[0]
+			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
+			accountFromConf := conf.Accounts[bankAccountNameFromFile]
+			// Get acccount id index from headers
+			var idIndex *int
+			for i, header := range headersInFile {
+				if header == accountFromConf.IdCol {
+					idIndex = &i
+				}
+			}
+			if idIndex == nil {
+				return fmt.Errorf("no id_col mapping for file '%s' in config", filePath)
+			}
 			dataRows := records[1:]
 			if len(dataRows) == 0 {
 				return fmt.Errorf("file %s has no records", filePath)
 			}
-			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
-			accountFromConf := conf.Accounts[bankAccountNameFromFile]
-
 			headersInConfig := conf.Headers(bankAccountNameFromFile)
 			dateLayout := accountFromConf.DateLayout
 			colIndices := accountsToColIndices[bankAccountNameFromFile]
@@ -484,9 +493,9 @@ func AddData(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
-
-				_, err = tx.Exec("INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?)",
-					bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
+				transactionId := row[*idIndex]
+				_, err = tx.Exec("INSERT INTO transactions (id, account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?, ?)",
+					transactionId, bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)
