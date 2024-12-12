@@ -70,6 +70,7 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 
 	createTransactionTableSQL := `CREATE TABLE IF NOT EXISTS transactions (
 	id TEXT PRIMARY KEY,
+	hash TEXT NOT NULL,
 	account_id INTEGER NOT NULL,
 	category_id INTEGER NOT NULL,
 	counter_party TEXT NOT NULL,
@@ -285,6 +286,16 @@ func computeFileHash(file *os.File) (string, error) {
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
+func computeTransactionHash(row []string) (string, error) {
+	joinedRow := strings.Join(row, "")
+	hash := sha256.New()
+	_, err := hash.Write([]byte(joinedRow))
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
 func AddData(conf *config.Config, db *sql.DB) error {
 	// First create a map of account name to db table names to indices
 	// like: {bank_of_america: {date: 0}} etc.
@@ -377,16 +388,6 @@ func AddData(conf *config.Config, db *sql.DB) error {
 			headersInFile := records[0]
 			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
 			accountFromConf := conf.Accounts[bankAccountNameFromFile]
-			// Get acccount id index from headers
-			var idIndex *int
-			for i, header := range headersInFile {
-				if header == accountFromConf.IdCol {
-					idIndex = &i
-				}
-			}
-			if idIndex == nil {
-				return fmt.Errorf("no id_col mapping for file '%s' in config", filePath)
-			}
 			dataRows := records[1:]
 			if len(dataRows) == 0 {
 				return fmt.Errorf("file %s has no records", filePath)
@@ -423,7 +424,12 @@ func AddData(conf *config.Config, db *sql.DB) error {
 				}
 			}
 
-			for _, row := range dataRows {
+			for i, row := range dataRows {
+				rowHash, err := computeTransactionHash(row)
+				if err != nil {
+					return fmt.Errorf("error hashing line %d of file %s: %w", i+1, filePath, err)
+				}
+				fmt.Println(rowHash)
 				date, err := parseDate(dateLayout, row[colIndices["transaction_date"]])
 				if date == nil {
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
@@ -493,9 +499,8 @@ func AddData(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
-				transactionId := row[*idIndex]
-				_, err = tx.Exec("INSERT INTO transactions (id, account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?, ?)",
-					transactionId, bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
+				_, err = tx.Exec("INSERT INTO transactions (hash, account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?, ?)",
+					rowHash, bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)

@@ -11,7 +11,6 @@ type Account struct {
 	Currency           string              `yaml:"currency"`
 	DateLayout         string              `yaml:"date_layout"`
 	Headers            []map[string]string `yaml:"headers"`
-	IdCol              string              `yaml:"id_col"`
 	ThousandsSeparator string              `yaml:"thousands_separator"`
 }
 type Config struct {
