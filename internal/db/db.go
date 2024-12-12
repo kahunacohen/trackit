@@ -80,7 +80,8 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 	date DATETIME NOT NULL,
 	FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
 	FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-);`
+); CREATE INDEX IF NOT EXISTS idx_transactions_hash ON transactions(hash);
+`
 
 	if _, err := tx.Exec(createTransactionTableSQL); err != nil {
 		tx.Rollback()
