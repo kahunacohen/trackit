@@ -3,6 +3,7 @@ package db
 import (
 	"crypto/sha256"
 	"database/sql"
+	_ "embed"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -44,86 +45,21 @@ func GetDB(pathToDBFile string) (*sql.DB, error) {
 	return sql.Open("sqlite", pathToDBFile)
 }
 
+//go:embed schema.sql
+var schemaSQL string
+
 func InitSchema(conf *config.Config, db *sql.DB) error {
-	tx, err := db.Begin()
-	if err != nil {
+	if _, err := db.Exec(schemaSQL); err != nil {
 		return err
 	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-		}
-	}()
-
-	createFileTableSQL := `CREATE TABLE IF NOT EXISTS files 
-	(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, hash TEXT NOT NULL);`
-	if _, err := tx.Exec(createFileTableSQL); err != nil {
-		return err
-	}
-
-	createAccountTableSQL := `CREATE TABLE IF NOT EXISTS accounts 
-	(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, currency TEXT NOT NULL);`
-	if _, err := tx.Exec(createAccountTableSQL); err != nil {
-		return err
-	}
-
-	createTransactionTableSQL := `CREATE TABLE IF NOT EXISTS transactions (
-	id TEXT PRIMARY KEY,
-	hash TEXT NOT NULL,
-	account_id INTEGER NOT NULL,
-	category_id INTEGER NOT NULL,
-	counter_party TEXT NOT NULL,
-	amount REAL NOT NULL,
-	deposit REAL,
-	withdrawl REAL,
-	date DATETIME NOT NULL,
-	FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
-	FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
-); CREATE INDEX IF NOT EXISTS idx_transactions_hash ON transactions(hash);
-`
-
-	if _, err := tx.Exec(createTransactionTableSQL); err != nil {
-		tx.Rollback()
-		return err
-	}
-	createCategoryTableSQL := `CREATE TABLE IF NOT EXISTS categories (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT
-	);`
-	if _, err := tx.Exec(createCategoryTableSQL); err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	createTransactionViewSQL := `
-CREATE VIEW transactions_view AS
-SELECT 
-    accounts.id AS account_id,
-    accounts.name AS account_name, 
-    transactions.id AS transaction_id, 
-	transactions.date AS date, 
-    transactions.counter_party AS counter_party, 
-    transactions.amount AS amount, 
-    categories.name AS category_name
-FROM 
-    transactions
-JOIN 
-    accounts ON transactions.account_id = accounts.id
-LEFT JOIN 
-    categories ON transactions.category_id = categories.id
-ORDER BY date DESC;`
-	if _, err := tx.Exec(createTransactionViewSQL); err != nil {
-		tx.Rollback()
-		return err
-	}
-	tx.Commit()
 	return nil
 }
 
 type Transaction struct {
+	Id           int
 	Amount       float64
 	Category     *string
+	Hash         string
 	CounterParty string
 	Date         string
 }
@@ -370,8 +306,6 @@ func AddData(conf *config.Config, db *sql.DB) error {
 			if fileHash != *hashFromDb {
 				fileShouldBeProcessed = true
 			}
-			log.Printf("file hash: %s\n", fileHash)
-			log.Printf("hash in db: %s\n", *hashFromDb)
 			if !fileShouldBeProcessed {
 				log.Printf("file %s has not changed, skip processing\n", filePath)
 				continue
@@ -430,7 +364,20 @@ func AddData(conf *config.Config, db *sql.DB) error {
 				if err != nil {
 					return fmt.Errorf("error hashing line %d of file %s: %w", i+1, filePath, err)
 				}
-				fmt.Println(rowHash)
+				var transactionFromDb Transaction
+				transactionExistsInDb := true
+				err = db.QueryRow("SELECT * FROM transactions WHERE hash=?", rowHash).Scan(&transactionFromDb)
+				if err != nil {
+					if err == sql.ErrNoRows {
+						transactionExistsInDb = false
+					} else {
+						return fmt.Errorf("error getting hash from db for line %d of file %s: %w", i+1, filePath, err)
+					}
+				}
+				if transactionExistsInDb {
+					log.Printf("transaction %s exists in db\n", transactionFromDb.Date)
+					continue
+				}
 				date, err := parseDate(dateLayout, row[colIndices["transaction_date"]])
 				if date == nil {
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)

@@ -1,0 +1,15 @@
+version: "2"
+sql:
+  - engine: sqlite
+    queries:   
+      - internal/db/queries/accounts.sql
+      - internal/db/queries/categories.sql
+      - internal/db/queries/files.sql
+      - internal/db/queries/transactions.sql
+
+    schema: internal/db/schema.sql
+    gen:
+      go:
+        package: models
+        out: internal/models
+                
