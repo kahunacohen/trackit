@@ -52,10 +52,6 @@ to quickly create a Cobra application.`,
 			log.Fatalf("error initializing categories: %v", err)
 		}
 		log.Println("initialized categories")
-		// if err = database.ProcessFiles(conf, db); err != nil {
-		// 	log.Fatalf("error initializing accounts: %v", err)
-		// }
-		// log.Println("initialized transactions")
 		log.Println("succesfully completed initialization")
 	},
 }

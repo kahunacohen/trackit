@@ -36,7 +36,7 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = database.AddData(conf, db)
+		err = database.ProcessFiles(conf, db)
 		if err != nil {
 			log.Fatal(err)
 		}

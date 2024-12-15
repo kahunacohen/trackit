@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	_ "embed"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	"github.com/kahunacohen/trackit/internal/config"
+	"github.com/kahunacohen/trackit/internal/models"
 	"golang.org/x/exp/maps"
 	"sigs.k8s.io/yaml"
 )
@@ -82,7 +84,6 @@ func validateDateDir(name string) bool {
 }
 func validateFileName(fileName string, conf *config.Config) bool {
 	for accountName := range conf.Accounts {
-		// targetFileName := strings.Replace(strings.ToLower(accountName), " ", "_", -1) + ".csv"
 		if accountName+".csv" == fileName {
 			return true
 		}
@@ -233,10 +234,12 @@ func computeTransactionHash(row []string) (string, error) {
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
-func AddData(conf *config.Config, db *sql.DB) error {
+func ProcessFiles(conf *config.Config, db *sql.DB) error {
 	// First create a map of account name to db table names to indices
 	// like: {bank_of_america: {date: 0}} etc.
 	// so we can know each bank account's csv structure.
+	queries := models.New(db)
+	ctx := context.Background()
 	accountsToColIndices := conf.ColIndices()
 	dateEntries, err := os.ReadDir(conf.Data)
 	if err != nil {
@@ -282,31 +285,24 @@ func AddData(conf *config.Config, db *sql.DB) error {
 			}
 
 			// Check if file has been modified
-			var hashFromDb *string
-			var fileShouldBeProcessed bool
-			err = db.QueryRow("SELECT hash FROM files where name=?", filePath).Scan(&hashFromDb)
+			var isFileHashInDB bool = true
+			hashFromDb, err := queries.GetHashFromFileName(ctx, filePath)
 			if err != nil {
 				if err == sql.ErrNoRows {
 					// The file never had a hash and has never been seen before.
 					log.Printf("file %s has never been processed, insert hash to db\n", filePath)
-					_, err := db.Exec("INSERT INTO files (name, hash) VALUES (?, ?)", filePath, fileHash)
-					hashFromDb = &fileHash
-					if err != nil {
+					if err := queries.CreateFile(ctx, models.CreateFileParams{Name: filePath, Hash: fileHash}); err != nil {
 						return fmt.Errorf("error inserting initial file hash: %w", err)
 					}
-					fileShouldBeProcessed = true
+
+					// File should be processed if hash not in db at all.
+					isFileHashInDB = false
 				} else {
 					// Some other error trying to get hash.
 					return fmt.Errorf("error looking up hash from db for %s: %v", filePath, err)
 				}
 			}
-			if hashFromDb == nil {
-				return fmt.Errorf("hash from db for file %s is nil", filePath)
-			}
-			if fileHash != *hashFromDb {
-				fileShouldBeProcessed = true
-			}
-			if !fileShouldBeProcessed {
+			if isFileHashInDB || fileHash == hashFromDb {
 				log.Printf("file %s has not changed, skip processing\n", filePath)
 				continue
 			}
@@ -347,7 +343,6 @@ func AddData(conf *config.Config, db *sql.DB) error {
 						exchangeRateNum = &rate.Rate
 					}
 				}
-
 			}
 
 			// check if headers config at least all exist in file headers. It could
@@ -359,25 +354,7 @@ func AddData(conf *config.Config, db *sql.DB) error {
 				}
 			}
 
-			for i, row := range dataRows {
-				rowHash, err := computeTransactionHash(row)
-				if err != nil {
-					return fmt.Errorf("error hashing line %d of file %s: %w", i+1, filePath, err)
-				}
-				var transactionFromDb Transaction
-				transactionExistsInDb := true
-				err = db.QueryRow("SELECT * FROM transactions WHERE hash=?", rowHash).Scan(&transactionFromDb)
-				if err != nil {
-					if err == sql.ErrNoRows {
-						transactionExistsInDb = false
-					} else {
-						return fmt.Errorf("error getting hash from db for line %d of file %s: %w", i+1, filePath, err)
-					}
-				}
-				if transactionExistsInDb {
-					log.Printf("transaction %s exists in db\n", transactionFromDb.Date)
-					continue
-				}
+			for _, row := range dataRows {
 				date, err := parseDate(dateLayout, row[colIndices["transaction_date"]])
 				if date == nil {
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
@@ -431,8 +408,7 @@ func AddData(conf *config.Config, db *sql.DB) error {
 				}
 
 				transaction := Transaction{Date: *date, Amount: amount, CounterParty: row[colIndices["counter_party"]]}
-				var bankAccountId int64
-				err = db.QueryRow("SELECT id FROM accounts where name=?", bankAccountNameFromFile).Scan(&bankAccountId)
+				bankAccountId, err := queries.GetAccountIdByName(ctx, bankAccountNameFromFile)
 				if err != nil {
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
@@ -440,15 +416,16 @@ func AddData(conf *config.Config, db *sql.DB) error {
 				if err != nil {
 					return err
 				}
-				var categoryId int
+				var categoryId int64
 				if categoryName != nil {
-					err := db.QueryRow("SELECT id FROM categories WHERE name=?", *categoryName).Scan(&categoryId)
+					categoryId, err = queries.GetCategoryIdByName(ctx, *categoryName)
 					if err != nil {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
-				_, err = tx.Exec("INSERT INTO transactions (hash, account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?, ?)",
-					rowHash, bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
+
+				_, err = tx.Exec("INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?)",
+					bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)
