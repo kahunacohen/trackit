@@ -268,7 +268,7 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 
 			// Check if file has been modified
 			var isFileHashInDB bool = true
-			hashFromDb, err := queries.GetHashFromFileName(ctx, filePath)
+			hashFromDb, err := queries.ReadHashFromFileName(ctx, filePath)
 			if err != nil {
 				if err == sql.ErrNoRows {
 					// The file never had a hash and has never been seen before.
@@ -390,7 +390,7 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 					amount = roundedAmount
 				}
 				counterParty := row[colIndices["counter_party"]]
-				bankAccountId, err := queries.GetAccountIdByName(ctx, bankAccountNameFromFile)
+				bankAccountId, err := queries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
 				if err != nil {
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
@@ -400,7 +400,7 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 				}
 				var categoryId int64
 				if categoryName != nil {
-					categoryId, err = queries.GetCategoryIdByName(ctx, *categoryName)
+					categoryId, err = queries.ReadCategoryIdByName(ctx, *categoryName)
 					if err != nil {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
@@ -416,6 +416,7 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("error inserting transaction: %w", err)
 				}
 			}
+
 			_, err = tx.Exec("UPDATE files set hash=? WHERE name=?", fileHash, filePath)
 			if err != nil {
 				tx.Rollback()

@@ -1,2 +1,2 @@
--- name: GetCategoryIdByName :one
+-- name: ReadCategoryIdByName :one
 SELECT id FROM categories WHERE name=?

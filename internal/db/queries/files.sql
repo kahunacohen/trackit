@@ -1,4 +1,4 @@
--- name: GetHashFromFileName :one
+-- name: ReadHashFromFileName :one
 SELECT hash FROM files where name=?;
 
 -- name: CreateFile :exec
