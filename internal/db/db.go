@@ -189,14 +189,6 @@ func InitCategories(conf *config.Config, db *sql.DB) error {
 	return nil
 }
 
-func parseDate(layout string, date string) (*string, error) {
-	t, err := time.Parse(layout, date)
-	if err != nil {
-		return nil, err
-	}
-	tStr := t.Format("2006-01-02 15:04:05")
-	return &tStr, nil
-}
 func parseAmount(amount string, thousandsSeparator string) (*float64, error) {
 	var amountStr string
 	if thousandsSeparator != "" {
@@ -220,16 +212,6 @@ func computeFileHash(file *os.File) (string, error) {
 	_, err = file.Seek(0, io.SeekStart)
 	if err != nil {
 		return "", fmt.Errorf("error resetting file pointer when trying to compute hash: %w", err)
-	}
-	return fmt.Sprintf("%x", hash.Sum(nil)), nil
-}
-
-func computeTransactionHash(row []string) (string, error) {
-	joinedRow := strings.Join(row, "")
-	hash := sha256.New()
-	_, err := hash.Write([]byte(joinedRow))
-	if err != nil {
-		return "", err
 	}
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
@@ -355,12 +337,13 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 			}
 
 			for _, row := range dataRows {
-				date, err := parseDate(dateLayout, row[colIndices["transaction_date"]])
-				if date == nil {
+				date, err := time.Parse(dateLayout, row[colIndices["transaction_date"]])
+
+				if err != nil {
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
 				}
 				if err != nil {
-					return fmt.Errorf("error parsing date %s: %v", *date, err)
+					return fmt.Errorf("error parsing date %s: %v", date, err)
 				}
 				var amount float64
 				thousandsSeparator := accountFromConf.ThousandsSeparator
@@ -406,13 +389,12 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 					roundedAmount := RoundAmount(targetAmount)
 					amount = roundedAmount
 				}
-
-				transaction := Transaction{Date: *date, Amount: amount, CounterParty: row[colIndices["counter_party"]]}
+				counterParty := row[colIndices["counter_party"]]
 				bankAccountId, err := queries.GetAccountIdByName(ctx, bankAccountNameFromFile)
 				if err != nil {
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
-				categoryName, err := getCategory(conf, transaction.CounterParty)
+				categoryName, err := getCategory(conf, counterParty)
 				if err != nil {
 					return err
 				}
@@ -423,9 +405,12 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
-
-				_, err = tx.Exec("INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?)",
-					bankAccountId, transaction.Date, transaction.Amount, transaction.CounterParty, &categoryId)
+				err = queries.CreateTransaction(ctx, models.CreateTransactionParams{
+					AccountID:    bankAccountId,
+					Date:         date,
+					Amount:       amount,
+					CounterParty: counterParty,
+					CategoryID:   ToNullInt64(&categoryId)})
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)
@@ -444,6 +429,14 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 
 	}
 	return nil
+}
+
+func ToNullInt64(val *int64) sql.NullInt64 {
+	if val != nil {
+		return sql.NullInt64{Int64: *val, Valid: true}
+	} else {
+		return sql.NullInt64{Valid: false}
+	}
 }
 
 func getCategory(conf *config.Config, counterPayer string) (*string, error) {
