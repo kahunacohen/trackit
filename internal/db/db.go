@@ -416,8 +416,7 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("error inserting transaction: %w", err)
 				}
 			}
-
-			_, err = tx.Exec("UPDATE files set hash=? WHERE name=?", fileHash, filePath)
+			err = queries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: filePath})
 			if err != nil {
 				tx.Rollback()
 				return fmt.Errorf("error updating file hash for file: %s: %w", filePath, err)

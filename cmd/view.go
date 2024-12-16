@@ -136,6 +136,12 @@ func RenderTransactionTable(transactions []database.Transaction) error {
 	totalStr := strconv.FormatFloat(total, 'f', 2, 64) // 'f' for floating-point format, 2 digits after the decimal
 
 	t.AppendFooter(table.Row{"", "", "Total", totalStr})
+	t.SetColumnConfigs([]table.ColumnConfig{
+		{
+			Name:  "Amount",
+			Align: 4,
+		},
+	})
 	t.Render()
 	return nil
 }
