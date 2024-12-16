@@ -28,6 +28,36 @@ CREATE TABLE IF NOT EXISTS categories (
 	name TEXT NOT NULL
 );
 
+INSERT INTO categories (name) VALUES
+('Business Expenses'),
+('Childcare'),
+('Clothing'),
+('Debt Payments'),
+('Dining Out'),
+('Donations'),
+('Education'),
+('Entertainment'),
+('Gifts'),
+('Groceries'),
+('Healthcare'),
+('Hobbies'),
+('Home Improvement'),
+('Household Supplies'),
+('Insurance'),
+('Investments'),
+('Miscellaneous'),
+('Mortgage/Rent'),
+('Personal Care'),
+('Professional Development'),
+('Savings'),
+('Special Occasions'),
+('Sports & Fitness'),
+('Subscriptions'),
+('Taxes'),
+('Transportation'),
+('Travel'),
+('Utilities');
+
 CREATE VIEW transactions_view AS
 SELECT 
     accounts.id AS account_id,
