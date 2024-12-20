@@ -65,6 +65,7 @@ to quickly create a Cobra application.`,
 				if err != nil {
 					return fmt.Errorf("prompt failed %w", err)
 				}
+				fmt.Printf("set !!!%d", categoryMap[categoryNameResult])
 				err = queries.UpdateTransactionCategory(ctx, models.UpdateTransactionCategoryParams{
 					CategoryID: sql.NullInt64{Valid: true, Int64: categoryMap[categoryNameResult]},
 					ID:         categoryMap[categoryNameResult]})
