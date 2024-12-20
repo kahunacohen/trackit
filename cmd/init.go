@@ -17,7 +17,7 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "intialize db",
+	Short: "Intializes internal database and parses configuration",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 

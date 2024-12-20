@@ -71,7 +71,6 @@ func init() {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
 		aggregateBy, _ := cmd.Flags().GetString("aggregate-by")
-		fmt.Println(aggregateBy)
 		homeDir, _ := os.UserHomeDir()
 		dbPath := filepath.Join(homeDir, "trackit.db")
 		db, err := database.GetDB(dbPath)
