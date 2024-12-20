@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -40,20 +41,36 @@ to quickly create a Cobra application.`,
 			if err != nil {
 				return fmt.Errorf("error reading non categorized transactions: %w", err)
 			}
-			items := []string{"foo", "bar"}
+			categories, err := queries.ReadAllCategories(ctx)
+			if err != nil {
+				return fmt.Errorf("error getting categories: %w", err)
+			}
+
+			var categoryMap map[string]int64 = make(map[string]int64)
+			for _, category := range categories {
+				categoryMap[category.Name] = category.ID
+			}
+			var categoryNames []string
+			for categoryName, _ := range categoryMap {
+				categoryNames = append(categoryNames, categoryName)
+			}
 
 			for _, row := range rows {
 				prompt := promptui.Select{
-					Label: fmt.Sprintf("Please select a category for %s | %s | %f on %s", row.AccountName, row.CounterParty, row.Amount, row.Date),
-					Items: items,
+					Label: fmt.Sprintf("Select a category for account %s, to %s for %.2f on %s",
+						row.AccountName, row.CounterParty, row.Amount, row.Date.Format("01-02-2006")),
+					Items: categoryNames,
 				}
-				_, result, err := prompt.Run()
+				_, categoryNameResult, err := prompt.Run()
 				if err != nil {
-					log.Fatalf("Prompt failed %v", err)
+					return fmt.Errorf("prompt failed %w", err)
 				}
-
-				// Print the selected option
-				fmt.Printf("You chose: %s\n", result)
+				err = queries.UpdateTransactionCategory(ctx, models.UpdateTransactionCategoryParams{
+					CategoryID: sql.NullInt64{Valid: true, Int64: categoryMap[categoryNameResult]},
+					ID:         categoryMap[categoryNameResult]})
+				if err != nil {
+					return fmt.Errorf("error setting category: %w", err)
+				}
 			}
 
 		}
