@@ -37,7 +37,7 @@ to quickly create a Cobra application.`,
 		ctx := context.Background()
 		if interactive {
 			queries := models.New(db)
-			rows, err := queries.ReadNonCategorizedTransactions(ctx)
+			transactions, err := queries.ReadNonCategorizedTransactions(ctx)
 			if err != nil {
 				return fmt.Errorf("error reading non categorized transactions: %w", err)
 			}
@@ -55,20 +55,19 @@ to quickly create a Cobra application.`,
 				categoryNames = append(categoryNames, categoryName)
 			}
 
-			for _, row := range rows {
+			for _, transaction := range transactions {
 				prompt := promptui.Select{
 					Label: fmt.Sprintf("Select a category for account %s, to %s for %.2f on %s",
-						row.AccountName, row.CounterParty, row.Amount, row.Date.Format("01-02-2006")),
+						transaction.AccountName, transaction.CounterParty, transaction.Amount, transaction.Date.Format("01-02-2006")),
 					Items: categoryNames,
 				}
 				_, categoryNameResult, err := prompt.Run()
 				if err != nil {
 					return fmt.Errorf("prompt failed %w", err)
 				}
-				fmt.Printf("set !!!%d", categoryMap[categoryNameResult])
 				err = queries.UpdateTransactionCategory(ctx, models.UpdateTransactionCategoryParams{
 					CategoryID: sql.NullInt64{Valid: true, Int64: categoryMap[categoryNameResult]},
-					ID:         categoryMap[categoryNameResult]})
+					ID:         transaction.ID})
 				if err != nil {
 					return fmt.Errorf("error setting category: %w", err)
 				}

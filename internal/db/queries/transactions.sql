@@ -2,7 +2,7 @@
 INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?);
 
 -- name: ReadNonCategorizedTransactions :many
-SELECT "date", counter_party, account_name, amount FROM transactions_view WHERE category_name IS NULL;
+SELECT transaction_id AS id, "date", counter_party, account_name, amount FROM transactions_view WHERE category_name IS NULL;
 
 -- name: UpdateTransactionCategory :exec
 UPDATE transactions SET category_id=? WHERE id=?;
