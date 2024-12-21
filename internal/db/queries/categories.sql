@@ -2,4 +2,4 @@
 SELECT id FROM categories WHERE "name"=?;
 
 -- name: ReadAllCategories :many
-SELECT * from categories;
+SELECT * from categories ORDER BY "name";

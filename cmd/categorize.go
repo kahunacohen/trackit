@@ -51,10 +51,9 @@ to quickly create a Cobra application.`,
 				categoryMap[category.Name] = category.ID
 			}
 			var categoryNames []string
-			for categoryName, _ := range categoryMap {
-				categoryNames = append(categoryNames, categoryName)
+			for _, category := range categories {
+				categoryNames = append(categoryNames, category.Name)
 			}
-
 			for _, transaction := range transactions {
 				prompt := promptui.Select{
 					Label: fmt.Sprintf("Select a category for account %s, to %s for %.2f on %s",
