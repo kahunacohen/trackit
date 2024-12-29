@@ -1,0 +1,4 @@
+exchange_rates:
+  - from: USD
+    to: ILS
+    rate: 3.75
