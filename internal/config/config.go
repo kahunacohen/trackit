@@ -14,10 +14,11 @@ type Account struct {
 	ThousandsSeparator string              `yaml:"thousands_separator"`
 }
 type Config struct {
-	BaseCurrency string              `yaml:"base_currency"`
 	Accounts     map[string]Account  `yaml:"accounts"`
+	BaseCurrency string              `yaml:"base_currency"`
 	Categories   map[string][]string `yaml:"categories"`
 	Data         string              `yaml:"data"`
+	IgnoreFiles  []string            `yaml:"ignore_files"`
 }
 
 func ParseConfig(path string) (*Config, error) {

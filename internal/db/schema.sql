@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS transactions (
 	amount REAL NOT NULL,
 	deposit REAL,
 	withdrawl REAL,
-	date DATETIME NOT NULL,
+    ignore_when_summing INTEGER NOT NULL DEFAULT 0 CHECK (ignore_when_summing IN (0, 1)),
+	"date" DATETIME NOT NULL,
 	FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
 	FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
@@ -65,7 +66,8 @@ SELECT
     transactions.id AS transaction_id, 
 	transactions.date AS date, 
     transactions.counter_party AS counter_party, 
-    transactions.amount AS amount, 
+    transactions.amount AS amount,
+    transactions.ignore_when_summing as ignore_when_summing,
     categories.name AS category_name
 FROM 
     transactions

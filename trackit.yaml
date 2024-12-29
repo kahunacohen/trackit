@@ -1,4 +1,6 @@
 base_currency: ILS
+ignore_files:
+  - .Ds_Store
 accounts:
   bank_of_america:
     date_layout: 01/02/2006

@@ -228,6 +228,16 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 		return err
 	}
 	for _, dateEntry := range dateEntries {
+		var ignoreEntry bool
+
+		for _, ignoreFile := range conf.IgnoreFiles {
+			if ignoreFile == dateEntry.Name() {
+				ignoreEntry = true
+			}
+		}
+		if ignoreEntry {
+			continue
+		}
 		dateName := dateEntry.Name()
 		validName := validateDateDir(dateName)
 		if !validName {
