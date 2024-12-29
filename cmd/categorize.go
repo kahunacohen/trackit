@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/manifoldco/promptui"
@@ -55,9 +56,13 @@ to quickly create a Cobra application.`,
 				categoryNames = append(categoryNames, category.Name)
 			}
 			for _, transaction := range transactions {
+				t := table.NewWriter()
+				t.SetStyle(table.StyleLight)
+				t.SetOutputMirror(os.Stdout)
+				t.AppendHeader(table.Row{"Date", "Account", "Payee", "Amount"})
+				t.AppendRow([]interface{}{transaction.Date.Format("01-02-2006"), transaction.AccountName, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
 				prompt := promptui.Select{
-					Label: fmt.Sprintf("Select a category for account %s, to %s for %.2f on %s",
-						transaction.AccountName, transaction.CounterParty, transaction.Amount, transaction.Date.Format("01-02-2006")),
+					Label: t.Render(),
 					Items: categoryNames,
 				}
 				_, categoryNameResult, err := prompt.Run()
