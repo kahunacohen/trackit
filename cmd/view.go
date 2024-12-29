@@ -115,7 +115,7 @@ func RenderTransactionTable(transactions []database.Transaction) error {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Date", "Payee", "Category", "Amount"})
+	t.AppendHeader(table.Row{"ID", "Date", "Payee", "Category", "Amount"})
 	var total float64
 	for _, transaction := range transactions {
 		parsedTime, err := time.Parse(time.RFC3339, transaction.Date)

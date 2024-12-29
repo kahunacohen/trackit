@@ -94,10 +94,15 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 	var transactions []Transaction
 	var rows *sql.Rows
 	var err error
-
+	queries := models.New(db)
 	// account and date are not set
+	ctx := context.Background()
 	if accountName == "" && date == "" {
-		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view;")
+		// rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view;")
+		rows, err = queries.ReadAllTransactions(ctx)
+		if err != nil {
+			return nil, err
+		}
 	} else if accountName != "" && date != "" { // Both are set
 		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=?",
 			accountName, date)
