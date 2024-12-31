@@ -58,7 +58,7 @@ func InitSchema(conf *config.Config, db *sql.DB) error {
 }
 
 type Transaction struct {
-	Id           int
+	Id           int64
 	Amount       float64
 	Category     *string
 	Hash         string
@@ -106,7 +106,7 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 			return nil, err
 		}
 	} else if accountName != "" && date != "" {
-		d, err := time.Parse("01-02-2006", date)
+		d, err := time.Parse("01-2006", date)
 		if err != nil {
 			return nil, fmt.Errorf("error converting date: %w", err)
 		}
@@ -132,7 +132,7 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 		}
 		// date is set but not account
 	} else {
-		d, err := time.Parse("01-02-2006", date)
+		d, err := time.Parse("01-2006", date)
 		if err != nil {
 			return nil, fmt.Errorf("error converting date: %w", err)
 		}
@@ -156,6 +156,7 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 		dateStr := row.Date.Format("01-02-2006")
 
 		transactions = append(transactions, Transaction{
+			Id:           row.TransactionID,
 			Amount:       row.Amount,
 			Category:     category,
 			CounterParty: row.CounterParty,
