@@ -19,16 +19,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// viewCmd represents the view command
-var viewCmd = &cobra.Command{
-	Use:   "view",
-	Short: "Generates a view of account data",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+// lsCmd represents the view command
+var lsCmd = &cobra.Command{
+	Use:   "ls",
+	Short: "Lists transactions",
+	Long:  `ls lists transactions.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
@@ -53,12 +48,12 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	rootCmd.AddCommand(viewCmd)
-	viewCmd.Flags().StringP("date", "d", "", "Date in MM-YYYY format")
-	viewCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
-	viewCmd.Flags().StringP("aggregate-by", "g", "", "What to aggregate by")
+	rootCmd.AddCommand(lsCmd)
+	lsCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format")
+	lsCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
+	lsCmd.Flags().StringP("aggregate-by", "g", "", "What to aggregate by")
 
-	viewCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+	lsCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		// Get the date flag value
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
