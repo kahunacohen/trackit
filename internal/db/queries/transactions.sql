@@ -12,3 +12,12 @@ SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS
 
 -- name: ReadAllTransactions :many
 SELECT date, counter_party, amount, category_name FROM transactions_view;
+
+-- name: ReadAllTransactionsByAccountNameAndDate :many
+SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=?;
+
+-- name: ReadAllTransactionsByAccountName :many
+SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=?;
+
+-- name: ReadAllTransactionsByDate :many
+SELECT date, counter_party, amount, category_name FROM transactions_view WHERE strftime('%m-%Y', date)=?;

@@ -92,40 +92,78 @@ func validateFileName(fileName string, conf *config.Config) bool {
 }
 func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Transaction, error) {
 	var transactions []Transaction
-	var rows *sql.Rows
+	var rows []models.ReadAllTransactionsRow
 	var err error
 	queries := models.New(db)
 	// account and date are not set
 	ctx := context.Background()
+
+	// @TODO this is a bit messy, repeated code, etc. Maybe make a wrapper function
+	// that handles the distinct types but with same fields.
 	if accountName == "" && date == "" {
-		// rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view;")
 		rows, err = queries.ReadAllTransactions(ctx)
 		if err != nil {
 			return nil, err
 		}
-	} else if accountName != "" && date != "" { // Both are set
-		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=?",
-			accountName, date)
+	} else if accountName != "" && date != "" {
+		d, err := time.Parse("01-02-2006", date)
+		if err != nil {
+			return nil, fmt.Errorf("error converting date: %w", err)
+		}
+		xs, err := queries.ReadAllTransactionsByAccountNameAndDate(ctx, models.ReadAllTransactionsByAccountNameAndDateParams{
+			AccountName: accountName,
+			Date:        d})
+		if err != nil {
+			return nil, err
+		}
+		// convert type with same shape to the general type since they have the same fields.
+		for _, x := range xs {
+			rows = append(rows, models.ReadAllTransactionsRow(x))
+		}
 		// account name is set but not date
 	} else if accountName != "" && date == "" {
-		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE account_name=?",
-			accountName)
+		xs, err := queries.ReadAllTransactionsByAccountName(ctx, accountName)
+		if err != nil {
+			return nil, err
+		}
+		// convert type with same shape to the general type since they have the same fields.
+		for _, x := range xs {
+			rows = append(rows, models.ReadAllTransactionsRow(x))
+		}
 		// date is set but not account
 	} else {
-		rows, err = db.Query("SELECT date, counter_party, amount, category_name FROM transactions_view WHERE strftime('%m-%Y', date)=?",
-			date)
+		d, err := time.Parse("01-02-2006", date)
+		if err != nil {
+			return nil, fmt.Errorf("error converting date: %w", err)
+		}
+		xs, err := queries.ReadAllTransactionsByDate(ctx, d)
+		if err != nil {
+			return nil, err
+		}
+		// convert type with same shape to the general type since they have the same fields.
+		for _, x := range xs {
+			rows = append(rows, models.ReadAllTransactionsRow(x))
+		}
 	}
 	if err != nil {
 		return nil, err
 	}
-	for rows.Next() {
-		var transaction Transaction
-		if err := rows.Scan(&transaction.Date, &transaction.CounterParty, &transaction.Amount, &transaction.Category); err != nil {
-			return nil, err // Handle scan error
+	for _, row := range rows {
+		var category *string
+		if row.CategoryName.Valid {
+			category = &row.CategoryName.String
 		}
-		transactions = append(transactions, transaction)
+		dateStr := row.Date.Format("01-02-2006")
+
+		transactions = append(transactions, Transaction{
+			Amount:       row.Amount,
+			Category:     category,
+			CounterParty: row.CounterParty,
+			Date:         dateStr,
+		})
 	}
 	return transactions, nil
+
 }
 func GetCategoryAggregation(db *sql.DB, account string, date string) ([]CategoryAgregation, error) {
 	var rows *sql.Rows

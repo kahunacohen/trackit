@@ -85,7 +85,7 @@ func init() {
 			}
 			err = RenderTransactionTable(transactions)
 			if err != nil {
-				return fmt.Errorf("error rendering transactions")
+				return fmt.Errorf("error rendering transactions: %w", err)
 			}
 		} else if aggregateBy == "category" {
 			aggregations, err := database.GetCategoryAggregation(db, account, date)
