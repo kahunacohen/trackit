@@ -1,6 +1,9 @@
 -- name: CreateTransaction :exec
 INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?);
 
+-- name: ReadTransactionById :one
+SELECT * from transactions_view WHERE transaction_id=?;
+
 -- name: ReadNonCategorizedTransactions :many
 SELECT transaction_id AS id, "date", counter_party, account_name, amount FROM transactions_view WHERE category_name IS NULL;
 

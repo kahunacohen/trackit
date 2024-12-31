@@ -32,24 +32,26 @@ transactions, or by categorizing individual transactions by ID.`,
 			log.Fatalf("Failed to open database: %v", err)
 		}
 		ctx := context.Background()
-		if interactive {
-			queries := models.New(db)
+		queries := models.New(db)
+
+		categories, err := queries.ReadAllCategories(ctx)
+		if err != nil {
+			return fmt.Errorf("error getting categories: %w", err)
+		}
+
+		var categoryMap map[string]int64 = make(map[string]int64)
+		for _, category := range categories {
+			categoryMap[category.Name] = category.ID
+		}
+		var categoryNames []string
+		for _, category := range categories {
+			categoryNames = append(categoryNames, category.Name)
+		}
+
+		if interactive && transactionId == 0 {
 			transactions, err := queries.ReadNonCategorizedTransactions(ctx)
 			if err != nil {
 				return fmt.Errorf("error reading non categorized transactions: %w", err)
-			}
-			categories, err := queries.ReadAllCategories(ctx)
-			if err != nil {
-				return fmt.Errorf("error getting categories: %w", err)
-			}
-
-			var categoryMap map[string]int64 = make(map[string]int64)
-			for _, category := range categories {
-				categoryMap[category.Name] = category.ID
-			}
-			var categoryNames []string
-			for _, category := range categories {
-				categoryNames = append(categoryNames, category.Name)
 			}
 			for _, transaction := range transactions {
 				t := table.NewWriter()
@@ -73,14 +75,43 @@ transactions, or by categorizing individual transactions by ID.`,
 				}
 			}
 
+		} else if !interactive && transactionId > 0 {
+			transaction, err := queries.ReadTransactionById(ctx, transactionId)
+			if err != nil {
+				return fmt.Errorf("error getting transaction %d", transactionId)
+			}
+			t := table.NewWriter()
+			t.SetStyle(table.StyleLight)
+			t.SetOutputMirror(os.Stdout)
+			t.AppendHeader(table.Row{"Date", "Account", "Payee", "Amount"})
+			t.AppendRow([]interface{}{transaction.Date, transaction.AccountName, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
+			prompt := promptui.Select{
+				Label: t.Render(),
+				Items: categoryNames,
+			}
+			_, categoryNameResult, err := prompt.Run()
+			if err != nil {
+				return fmt.Errorf("prompt failed %w", err)
+			}
+			err = queries.UpdateTransactionCategory(ctx, models.UpdateTransactionCategoryParams{
+				CategoryID: sql.NullInt64{Valid: true, Int64: categoryMap[categoryNameResult]},
+				ID:         transaction.TransactionID})
+			if err != nil {
+				return fmt.Errorf("error setting category: %w", err)
+			}
+
+		} else {
+			return fmt.Errorf("must pass either --interactive or --transaction-id")
 		}
 		return nil
 	},
 }
 var interactive bool
+var transactionId int64
 
 func init() {
 	categorizeCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Enable interactive mode")
+	categorizeCmd.Flags().Int64VarP(&transactionId, "transaction-id", "t", 0, "valid transaction ID to categorize")
 	rootCmd.AddCommand(categorizeCmd)
 
 	// Here you will define your flags and configuration settings.
