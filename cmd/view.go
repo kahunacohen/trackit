@@ -15,6 +15,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/config"
 	database "github.com/kahunacohen/trackit/internal/db"
+	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
 
@@ -108,25 +109,25 @@ func RenderAggregateTable(aggregates []database.CategoryAgregation) {
 	t.Render()
 }
 
-func RenderTransactionTable(transactions []database.Transaction) error {
+func RenderTransactionTable(rows []models.ReadAllTransactionsRow) error {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"ID", "Date", "Payee", "Category", "Amount"})
+	t.AppendHeader(table.Row{"ID", "Date", "Payee", "Account", "Category", "Amount"})
 	var total float64
-	for _, transaction := range transactions {
-		var cat string
-		if transaction.Category == nil {
-			cat = "-"
+	for _, row := range rows {
+		var category string
+		if row.CategoryName.Valid {
+			category = row.CategoryName.String
 		} else {
-			cat = *transaction.Category
+			category = "-"
 		}
-		t.AppendRow([]interface{}{transaction.Id, transaction.Date, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
-		total += transaction.Amount
+		t.AppendRow([]interface{}{row.TransactionID, row.Date, row.CounterParty, row.AccountName, category, fmt.Sprintf("%.2f", row.Amount)})
+		total += row.Amount
 	}
 	totalStr := strconv.FormatFloat(total, 'f', 2, 64) // 'f' for floating-point format, 2 digits after the decimal
 
-	t.AppendFooter(table.Row{"", "", "", "Total", totalStr})
+	t.AppendFooter(table.Row{"", "", "", "", "Total", totalStr})
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{
 			Name:  "Amount",

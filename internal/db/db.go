@@ -90,8 +90,7 @@ func validateFileName(fileName string, conf *config.Config) bool {
 	}
 	return false
 }
-func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Transaction, error) {
-	var transactions []Transaction
+func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]models.ReadAllTransactionsRow, error) {
 	var rows []models.ReadAllTransactionsRow
 	var err error
 	queries := models.New(db)
@@ -140,22 +139,7 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 	if err != nil {
 		return nil, err
 	}
-	for _, row := range rows {
-		var category *string
-		if row.CategoryName.Valid {
-			category = &row.CategoryName.String
-		}
-
-		transactions = append(transactions, Transaction{
-			Id:           row.TransactionID,
-			Amount:       row.Amount,
-			Category:     category,
-			CounterParty: row.CounterParty,
-			Date:         row.Date,
-		})
-	}
-	return transactions, nil
-
+	return rows, nil
 }
 func GetCategoryAggregation(db *sql.DB, account string, date string) ([]CategoryAgregation, error) {
 	var rows *sql.Rows
