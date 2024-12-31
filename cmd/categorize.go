@@ -22,12 +22,8 @@ import (
 var categorizeCmd = &cobra.Command{
 	Use:   "categorize",
 	Short: "Categorizes transactions",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long: `categorize categorizes transactions either by interactively categorizing un-categorized
+transactions, or by categorizing individual transactions by ID.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		homeDir, _ := os.UserHomeDir()
 		dbPath := filepath.Join(homeDir, "trackit.db")
