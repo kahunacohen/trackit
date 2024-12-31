@@ -91,8 +91,8 @@ func validateFileName(fileName string, conf *config.Config) bool {
 	}
 	return false
 }
-func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]models.ReadAllTransactionsRow, error) {
-	var rows []models.ReadAllTransactionsRow
+func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]models.ReadTransactionsRow, error) {
+	var rows []models.ReadTransactionsRow
 	var err error
 	queries := models.New(db)
 	// account and date are not set
@@ -101,12 +101,12 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 	// @TODO this is a bit messy, repeated code, etc. Maybe make a wrapper function
 	// that handles the distinct types but with same fields.
 	if accountName == "" && date == "" {
-		rows, err = queries.ReadAllTransactions(ctx)
+		rows, err = queries.ReadTransactions(ctx)
 		if err != nil {
 			return nil, err
 		}
 	} else if accountName != "" && date != "" {
-		xs, err := queries.ReadAllTransactionsByAccountNameAndDate(ctx, models.ReadAllTransactionsByAccountNameAndDateParams{
+		xs, err := queries.ReadTransactionsByAccountNameAndDate(ctx, models.ReadTransactionsByAccountNameAndDateParams{
 			AccountName: accountName,
 			Date:        date})
 		if err != nil {
@@ -114,27 +114,27 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 		}
 		// convert type with same shape to the general type since they have the same fields.
 		for _, x := range xs {
-			rows = append(rows, models.ReadAllTransactionsRow(x))
+			rows = append(rows, models.ReadTransactionsRow(x))
 		}
 		// account name is set but not date
 	} else if accountName != "" && date == "" {
-		xs, err := queries.ReadAllTransactionsByAccountName(ctx, accountName)
+		xs, err := queries.ReadTransactionsByAccountName(ctx, accountName)
 		if err != nil {
 			return nil, err
 		}
 		// convert type with same shape to the general type since they have the same fields.
 		for _, x := range xs {
-			rows = append(rows, models.ReadAllTransactionsRow(x))
+			rows = append(rows, models.ReadTransactionsRow(x))
 		}
 		// date is set but not account
 	} else {
-		xs, err := queries.ReadAllTransactionsByDate(ctx, date)
+		xs, err := queries.ReadTransactionsByDate(ctx, date)
 		if err != nil {
 			return nil, err
 		}
 		// convert type with same shape to the general type since they have the same fields.
 		for _, x := range xs {
-			rows = append(rows, models.ReadAllTransactionsRow(x))
+			rows = append(rows, models.ReadTransactionsRow(x))
 		}
 	}
 	if err != nil {
@@ -142,46 +142,42 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 	}
 	return rows, nil
 }
-func GetCategoryAggregation(db *sql.DB, account string, date string) ([]models.AggregateAllTransactionsRow, error) {
+func GetCategoryAggregation(db *sql.DB, account string, date string) ([]models.AggregateTransactionsRow, error) {
 	queries := models.New(db)
 	ctx := context.Background()
 	var err error
-	var rows []models.AggregateAllTransactionsRow
+	var rows []models.AggregateTransactionsRow
 	if account == "" && date == "" {
-		rows, err = queries.AggregateAllTransactions(ctx)
+		rows, err = queries.AggregateTransactions(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("error aggregating rows: %w", err)
 		}
 	} else if account != "" && date == "" {
-		xs, err := queries.AggregateAllTransactionsByAccountName(ctx, account)
+		xs, err := queries.AggregateTransactionsByAccountName(ctx, account)
 		if err != nil {
 			return nil, fmt.Errorf("error aggreating rows: %w", err)
 		}
 		for _, x := range xs {
-			rows = append(rows, models.AggregateAllTransactionsRow(x))
+			rows = append(rows, models.AggregateTransactionsRow(x))
 		}
 	} else if account == "" && date != "" {
-		xs, err := queries.AggregateAllTransactionsByDate(ctx, date)
+		xs, err := queries.AggregateTransactionsByDate(ctx, date)
 		if err != nil {
 			return nil, fmt.Errorf("error aggreating rows: %w", err)
 		}
 		for _, x := range xs {
-			rows = append(rows, models.AggregateAllTransactionsRow(x))
+			rows = append(rows, models.AggregateTransactionsRow(x))
 		}
 	} else {
-		// 	rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY total_amount;",
-		// 		account, date)
+		xs, err := queries.AggregateTransactionsByAccountNameAndDate(ctx,
+			models.AggregateTransactionsByAccountNameAndDateParams{AccountName: account, Date: date})
+		if err != nil {
+			return nil, fmt.Errorf("error aggreating rows: %w", err)
+		}
+		for _, x := range xs {
+			rows = append(rows, models.AggregateTransactionsRow(x))
+		}
 	}
-
-	// var aggregates []CategoryAgregation
-	// for rows.Next() {
-	// 	var aggregate CategoryAgregation
-	// 	if err := rows.Scan(&aggregate.Category, &aggregate.Total); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	aggregate.Total = RoundAmount(aggregate.Total)
-	// 	aggregates = append(aggregates, aggregate)
-	// }
 	return rows, nil
 }
 

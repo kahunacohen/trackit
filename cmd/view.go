@@ -92,7 +92,7 @@ func init() {
 	}
 }
 
-func RenderAggregateTable(aggregates []models.AggregateAllTransactionsRow) {
+func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(os.Stdout)
@@ -105,7 +105,7 @@ func RenderAggregateTable(aggregates []models.AggregateAllTransactionsRow) {
 	t.Render()
 }
 
-func RenderTransactionTable(rows []models.ReadAllTransactionsRow) error {
+func RenderTransactionTable(rows []models.ReadTransactionsRow) error {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(os.Stdout)
