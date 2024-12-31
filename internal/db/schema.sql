@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 	deposit REAL,
 	withdrawl REAL,
     ignore_when_summing INTEGER NOT NULL DEFAULT 0 CHECK (ignore_when_summing IN (0, 1)),
-	"date" DATETIME NOT NULL,
+	"date" TEXT NOT NULL,
 	FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
 	FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );

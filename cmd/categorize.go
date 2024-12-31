@@ -60,7 +60,7 @@ to quickly create a Cobra application.`,
 				t.SetStyle(table.StyleLight)
 				t.SetOutputMirror(os.Stdout)
 				t.AppendHeader(table.Row{"Date", "Account", "Payee", "Amount"})
-				t.AppendRow([]interface{}{transaction.Date.Format("01-02-2006"), transaction.AccountName, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
+				t.AppendRow([]interface{}{transaction.Date, transaction.AccountName, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
 				prompt := promptui.Select{
 					Label: t.Render(),
 					Items: categoryNames,

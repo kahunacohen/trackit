@@ -106,13 +106,9 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 			return nil, err
 		}
 	} else if accountName != "" && date != "" {
-		d, err := time.Parse("01-2006", date)
-		if err != nil {
-			return nil, fmt.Errorf("error converting date: %w", err)
-		}
 		xs, err := queries.ReadAllTransactionsByAccountNameAndDate(ctx, models.ReadAllTransactionsByAccountNameAndDateParams{
 			AccountName: accountName,
-			Date:        d})
+			Date:        date})
 		if err != nil {
 			return nil, err
 		}
@@ -132,11 +128,7 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 		}
 		// date is set but not account
 	} else {
-		d, err := time.Parse("01-2006", date)
-		if err != nil {
-			return nil, fmt.Errorf("error converting date: %w", err)
-		}
-		xs, err := queries.ReadAllTransactionsByDate(ctx, d)
+		xs, err := queries.ReadAllTransactionsByDate(ctx, date)
 		if err != nil {
 			return nil, err
 		}
@@ -153,14 +145,13 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]Tran
 		if row.CategoryName.Valid {
 			category = &row.CategoryName.String
 		}
-		dateStr := row.Date.Format("01-02-2006")
 
 		transactions = append(transactions, Transaction{
 			Id:           row.TransactionID,
 			Amount:       row.Amount,
 			Category:     category,
 			CounterParty: row.CounterParty,
-			Date:         dateStr,
+			Date:         row.Date,
 		})
 	}
 	return transactions, nil
@@ -392,7 +383,6 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 
 			for _, row := range dataRows {
 				date, err := time.Parse(dateLayout, row[colIndices["transaction_date"]])
-
 				if err != nil {
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
 				}
@@ -461,7 +451,7 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 				}
 				err = queries.CreateTransaction(ctx, models.CreateTransactionParams{
 					AccountID:    bankAccountId,
-					Date:         date,
+					Date:         date.Format("2006-01-02"),
 					Amount:       amount,
 					CounterParty: counterParty,
 					CategoryID:   ToNullInt64(&categoryId)})

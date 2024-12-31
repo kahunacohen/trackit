@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/config"
@@ -37,12 +38,9 @@ to quickly create a Cobra application.`,
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
 		if date != "" {
-			isValid, err := validateDateFormat(date)
+			_, err := time.Parse("2006-01", date)
 			if err != nil {
-				return err
-			}
-			if !isValid {
-				return fmt.Errorf("date must be in MM-YYYY format")
+				return fmt.Errorf("date must be in YYYY-MM format")
 			}
 		}
 		if account != "" {
