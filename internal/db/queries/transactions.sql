@@ -21,3 +21,10 @@ SELECT date, counter_party, amount, category_name FROM transactions_view WHERE a
 
 -- name: ReadAllTransactionsByDate :many
 SELECT date, counter_party, amount, category_name FROM transactions_view WHERE strftime('%m-%Y', date)=?;
+
+-- name: Foo :many
+SELECT date, counter_party, amount, category_name 
+FROM transactions_view
+WHERE 
+  (account_name = :account_name OR :account_name IS NULL)
+  AND (strftime('%m-%Y', date) = :date OR :date IS NULL);
