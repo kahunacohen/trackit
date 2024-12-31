@@ -123,12 +123,12 @@ func RenderTransactionTable(transactions []database.Transaction) error {
 		} else {
 			cat = *transaction.Category
 		}
-		t.AppendRow([]interface{}{transaction.Date, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
+		t.AppendRow([]interface{}{transaction.Id, transaction.Date, transaction.CounterParty, cat, fmt.Sprintf("%.2f", transaction.Amount)})
 		total += transaction.Amount
 	}
 	totalStr := strconv.FormatFloat(total, 'f', 2, 64) // 'f' for floating-point format, 2 digits after the decimal
 
-	t.AppendFooter(table.Row{"", "", "Total", totalStr})
+	t.AppendFooter(table.Row{"", "", "", "Total", totalStr})
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{
 			Name:  "Amount",
