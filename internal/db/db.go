@@ -66,7 +66,7 @@ type Transaction struct {
 	Date         string
 }
 
-func validateDateDir(name string) bool {
+func validateDateDirectoryName(name string) bool {
 	split := strings.Split(name, "-")
 	if len(split) != 2 {
 		return false
@@ -82,6 +82,7 @@ func validateDateDir(name string) bool {
 	year := split[1]
 	return len(year) == 4
 }
+
 func validateFileName(fileName string, conf *config.Config) bool {
 	for accountName := range conf.Accounts {
 		if accountName+".csv" == fileName {
@@ -141,32 +142,47 @@ func GetAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 	}
 	return rows, nil
 }
-func GetCategoryAggregation(db *sql.DB, account string, date string) ([]CategoryAgregation, error) {
-	var rows *sql.Rows
+func GetCategoryAggregation(db *sql.DB, account string, date string) ([]models.AggregateAllTransactionsRow, error) {
+	queries := models.New(db)
+	ctx := context.Background()
 	var err error
+	var rows []models.AggregateAllTransactionsRow
 	if account == "" && date == "" {
-		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY total_amount;")
-	} else if account != "" && date == "" {
-		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? GROUP BY category_name ORDER BY total_amount;", account)
-	} else if account == "" && date != "" {
-		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY total_amount;", date)
-	} else {
-		rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY total_amount;",
-			account, date)
-	}
-	if err != nil {
-		return nil, err
-	}
-	var aggregates []CategoryAgregation
-	for rows.Next() {
-		var aggregate CategoryAgregation
-		if err := rows.Scan(&aggregate.Category, &aggregate.Total); err != nil {
-			return nil, err
+		rows, err = queries.AggregateAllTransactions(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error aggregating rows: %w", err)
 		}
-		aggregate.Total = RoundAmount(aggregate.Total)
-		aggregates = append(aggregates, aggregate)
+	} else if account != "" && date == "" {
+		xs, err := queries.AggregateAllTransactionsByAccountName(ctx, account)
+		if err != nil {
+			return nil, fmt.Errorf("error aggreating rows: %w", err)
+		}
+		for _, x := range xs {
+			rows = append(rows, models.AggregateAllTransactionsRow(x))
+		}
+	} else if account == "" && date != "" {
+		xs, err := queries.AggregateAllTransactionsByDate(ctx, date)
+		if err != nil {
+			return nil, fmt.Errorf("error aggreating rows: %w", err)
+		}
+		for _, x := range xs {
+			rows = append(rows, models.AggregateAllTransactionsRow(x))
+		}
+	} else {
+		// 	rows, err = db.Query("SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%m-%Y', date)=? GROUP BY category_name ORDER BY total_amount;",
+		// 		account, date)
 	}
-	return aggregates, nil
+
+	// var aggregates []CategoryAgregation
+	// for rows.Next() {
+	// 	var aggregate CategoryAgregation
+	// 	if err := rows.Scan(&aggregate.Category, &aggregate.Total); err != nil {
+	// 		return nil, err
+	// 	}
+	// 	aggregate.Total = RoundAmount(aggregate.Total)
+	// 	aggregates = append(aggregates, aggregate)
+	// }
+	return rows, nil
 }
 
 func InitAccounts(conf *config.Config, db *sql.DB) error {
@@ -258,7 +274,7 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 			continue
 		}
 		dateName := dateEntry.Name()
-		validName := validateDateDir(dateName)
+		validName := validateDateDirectoryName(dateName)
 		if !validName {
 			return fmt.Errorf("month directory '%s' is invalid. Must be mm-yyyy", dateName)
 		}

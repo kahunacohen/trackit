@@ -37,15 +37,4 @@ accounts:
         table: ~
       - name: remark
         table: ~
-categories:
-  # salary:
-  #   - (MTA Central-Y)
-  # groceries:
-  #   - (?i)(meetman|rami levi|wine)
-  # entertainment:
-  #   - (amazon|netflix|sfarim)
-  # eating out:
-  #   - SHAWARMA
-  # clothing:
-  #   - (?i)bgoodshilat
 data: ./data

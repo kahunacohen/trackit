@@ -92,13 +92,15 @@ func init() {
 	}
 }
 
-func RenderAggregateTable(aggregates []database.CategoryAgregation) {
+func RenderAggregateTable(aggregates []models.AggregateAllTransactionsRow) {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Category", "Total"})
 	for _, aggregate := range aggregates {
-		t.AppendRow([]interface{}{aggregate.Category, aggregate.Total})
+		if aggregate.TotalAmount.Valid {
+			t.AppendRow([]interface{}{aggregate.CategoryName, database.RoundAmount(aggregate.TotalAmount.Float64)})
+		}
 	}
 	t.Render()
 }
