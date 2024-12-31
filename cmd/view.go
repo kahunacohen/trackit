@@ -8,8 +8,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -18,12 +18,6 @@ import (
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
-
-func validateDateFormat(date string) (bool, error) {
-	// Regular expression for MM-YYYY format
-	re := regexp.MustCompile(`^(0[1-9]|1[0-2])-[0-9]{4}$`)
-	return re.MatchString(date), nil
-}
 
 // viewCmd represents the view command
 var viewCmd = &cobra.Command{
@@ -122,7 +116,7 @@ func RenderTransactionTable(rows []models.ReadAllTransactionsRow) error {
 		} else {
 			category = "-"
 		}
-		t.AppendRow([]interface{}{row.TransactionID, row.Date, row.CounterParty, row.AccountName, category, fmt.Sprintf("%.2f", row.Amount)})
+		t.AppendRow([]interface{}{row.TransactionID, row.Date, row.CounterParty, accountKeyToName(row.AccountName), category, fmt.Sprintf("%.2f", row.Amount)})
 		total += row.Amount
 	}
 	totalStr := strconv.FormatFloat(total, 'f', 2, 64) // 'f' for floating-point format, 2 digits after the decimal
@@ -136,4 +130,16 @@ func RenderTransactionTable(rows []models.ReadAllTransactionsRow) error {
 	})
 	t.Render()
 	return nil
+}
+
+func accountKeyToName(account string) string {
+	var name string
+	split := strings.Split(account, "_")
+	for i, s := range split {
+		name += s
+		if i != len(split)-1 {
+			name += " "
+		}
+	}
+	return strings.Title(name)
 }
