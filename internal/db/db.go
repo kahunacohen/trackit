@@ -259,20 +259,11 @@ func ProcessFiles(conf *config.Config, db *sql.DB) error {
 		return err
 	}
 	for _, dateEntry := range dateEntries {
-		var ignoreEntry bool
-
-		for _, ignoreFile := range conf.IgnoreFiles {
-			if ignoreFile == dateEntry.Name() {
-				ignoreEntry = true
-			}
-		}
-		if ignoreEntry {
-			continue
-		}
 		dateName := dateEntry.Name()
 		validName := validateDateDirectoryName(dateName)
 		if !validName {
-			return fmt.Errorf("month directory '%s' is invalid. Must be mm-yyyy", dateName)
+			log.Printf("skipping directory '%s'. Not a valid month directory in the form YYYY-mm", dateName)
+			continue
 		}
 		monthPath := filepath.Join(conf.Data, dateName)
 		fileEntries, err := os.ReadDir(monthPath)

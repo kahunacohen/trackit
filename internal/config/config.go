@@ -18,7 +18,6 @@ type Config struct {
 	BaseCurrency string              `yaml:"base_currency"`
 	Categories   map[string][]string `yaml:"categories"`
 	Data         string              `yaml:"data"`
-	IgnoreFiles  []string            `yaml:"ignore_files"`
 }
 
 func ParseConfig(path string) (*Config, error) {
