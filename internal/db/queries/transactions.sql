@@ -14,7 +14,7 @@ UPDATE transactions SET category_id=? WHERE id=?;
 SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY total_amount;
 
 -- name: ReadTransactions :many
-SELECT transaction_id, "date", account_name, counter_party, amount, category_name FROM transactions_view ORDER BY "date";
+SELECT transaction_id, "date", account_name, counter_party, amount, category_name FROM transactions_view ORDER BY "date" DESC;
 
 -- name: ReadTransactionsByAccountNameAndDate :many
 SELECT transaction_id, "date", account_name, counter_party, amount, category_name FROM transactions_view WHERE account_name=? AND strftime('%Y-%m', "date") = ?;
