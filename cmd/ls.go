@@ -65,41 +65,6 @@ func init() {
 	lsCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format")
 	lsCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
 	lsCmd.Flags().StringP("aggregate-by", "g", "", "What to aggregate by")
-
-	// lsCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-	// 	fmt.Println("PersistentPreRunE")
-
-	// 	// Get the date flag value
-	// 	date, _ := cmd.Flags().GetString("date")
-	// 	account, _ := cmd.Flags().GetString("account")
-	// 	aggregateBy, _ := cmd.Flags().GetString("aggregate-by")
-	// 	homeDir, _ := os.UserHomeDir()
-	// 	dbPath := filepath.Join(homeDir, "trackit.db")
-	// 	db, err := database.GetDB(dbPath)
-	// 	if err != nil {
-	// 		log.Fatalf("Failed to open database: %v", err)
-	// 	}
-
-	// 	if aggregateBy == "" {
-	// 		transactions, err := database.GetAccountTransactions(db, account, date)
-	// 		if err != nil {
-	// 			return fmt.Errorf("error getting transactions: %w", err)
-	// 		}
-	// 		err = RenderTransactionTable(transactions)
-	// 		if err != nil {
-	// 			return fmt.Errorf("error rendering transactions: %w", err)
-	// 		}
-	// 	} else if aggregateBy == "category" {
-	// 		aggregations, err := database.GetCategoryAggregation(db, account, date)
-	// 		if err != nil {
-	// 			return fmt.Errorf("error aggregating by category: %w", err)
-	// 		}
-	// 		RenderAggregateTable(aggregations)
-	// 	} else {
-	// 		return fmt.Errorf("invalid aggregation '%s'", aggregateBy)
-	// 	}
-	// 	return nil
-	// }
 }
 
 func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
