@@ -5,11 +5,15 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+
+	database "github.com/kahunacohen/trackit/internal/db"
 
 	"github.com/spf13/cobra"
 )
 
-// aggregateCmd represents the aggregate command
 var aggregateCmd = &cobra.Command{
 	Use:   "aggregate",
 	Short: "Aggregates transactions by some facet, reporting total amount (default is category)",
@@ -18,13 +22,34 @@ var aggregateCmd = &cobra.Command{
 $ trackit aggregate
 $ trackit aggregate --by account
 `,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("aggregate called")
+	RunE: func(cmd *cobra.Command, args []string) error {
+		date, _ := cmd.Flags().GetString("date")
+		account, _ := cmd.Flags().GetString("account")
+		by, _ := cmd.Flags().GetString("by")
+		homeDir, _ := os.UserHomeDir()
+		dbPath := filepath.Join(homeDir, "trackit.db")
+		db, err := database.GetDB(dbPath)
+		if err != nil {
+			log.Fatalf("Failed to open database: %v", err)
+		}
+
+		if by == "category" {
+			aggregations, err := database.GetCategoryAggregation(db, account, date)
+			if err != nil {
+				return fmt.Errorf("error aggregating by category: %w", err)
+			}
+			RenderAggregateTable(aggregations)
+		} else {
+			return fmt.Errorf("aggregation '%s' not implemented yet", by)
+		}
+		return nil
+
 	},
 }
 
 func init() {
-	aggregateCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format")
+	aggregateCmd.Flags().StringP("account", "a", "", "account key from trackit.yaml to filter by account")
+	aggregateCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format with which to filter")
 	aggregateCmd.Flags().StringP("by", "b", "category", "What to aggregate total by")
 	rootCmd.AddCommand(aggregateCmd)
 }

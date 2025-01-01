@@ -18,7 +18,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// categorizeCmd represents the categorize command
 var categorizeCmd = &cobra.Command{
 	Use:   "categorize",
 	Short: "Categorizes transactions",
@@ -113,14 +112,4 @@ func init() {
 	categorizeCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Enable interactive mode")
 	categorizeCmd.Flags().Int64VarP(&transactionId, "transaction-id", "t", 0, "valid transaction ID to categorize")
 	rootCmd.AddCommand(categorizeCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// categorizeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// categorizeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
