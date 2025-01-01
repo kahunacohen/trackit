@@ -21,9 +21,11 @@ import (
 var categorizeCmd = &cobra.Command{
 	Use:   "categorize",
 	Short: "Categorizes transactions",
-	Long: `categorize categorizes transactions either by interactively categorizing un-categorized
-transactions, or by categorizing individual transactions by ID.`,
+	Long: `categorize categorizes transactions either by interactively categorizing all un-categorized
+transactions (no flags passed), or by categorizing individual transactions by ID.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		transactionId, _ := cmd.Flags().GetInt64("transaction-id")
 		homeDir, _ := os.UserHomeDir()
 		dbPath := filepath.Join(homeDir, "trackit.db")
 		db, err := database.GetDB(dbPath)
@@ -46,8 +48,7 @@ transactions, or by categorizing individual transactions by ID.`,
 		for _, category := range categories {
 			categoryNames = append(categoryNames, category.Name)
 		}
-
-		if interactive && transactionId == 0 {
+		if transactionId == 0 {
 			transactions, err := queries.ReadNonCategorizedTransactions(ctx)
 			if err != nil {
 				return fmt.Errorf("error reading non categorized transactions: %w", err)
@@ -74,7 +75,7 @@ transactions, or by categorizing individual transactions by ID.`,
 				}
 			}
 
-		} else if !interactive && transactionId > 0 {
+		} else {
 			transaction, err := queries.ReadTransactionById(ctx, transactionId)
 			if err != nil {
 				return fmt.Errorf("error getting transaction %d", transactionId)
@@ -98,18 +99,12 @@ transactions, or by categorizing individual transactions by ID.`,
 			if err != nil {
 				return fmt.Errorf("error setting category: %w", err)
 			}
-
-		} else {
-			return fmt.Errorf("must pass either --interactive or --transaction-id")
 		}
 		return nil
 	},
 }
-var interactive bool
-var transactionId int64
 
 func init() {
-	categorizeCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Enable interactive mode")
-	categorizeCmd.Flags().Int64VarP(&transactionId, "transaction-id", "t", 0, "valid transaction ID to categorize")
+	categorizeCmd.Flags().Int64P("transaction-id", "i", 0, "valid transaction ID to categorize")
 	rootCmd.AddCommand(categorizeCmd)
 }
