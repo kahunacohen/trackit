@@ -32,10 +32,10 @@ SELECT transaction_id, "date", account_name, counter_party, amount, ignore_when_
 SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE ignore_when_summing = false GROUP BY category_name ORDER BY total_amount;
 
 -- name: AggregateTransactionsByAccountName :many
-SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? GROUP BY category_name ORDER BY total_amount;
+SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND account_name=? GROUP BY category_name ORDER BY total_amount;
 
 -- name: AggregateTransactionsByDate :many
-SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE strftime('%Y-%m', "date")=? GROUP BY category_name ORDER BY total_amount;
+SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND strftime('%Y-%m', "date")=? GROUP BY category_name ORDER BY total_amount;
 
 -- name: AggregateTransactionsByAccountNameAndDate :many
-SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%Y-%m', date)=? GROUP BY category_name ORDER BY total_amount;
+SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND account_name=? AND strftime('%Y-%m', date)=? GROUP BY category_name ORDER BY total_amount;
