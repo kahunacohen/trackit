@@ -17,19 +17,19 @@ UPDATE transactions SET ignore_when_summing=? WHERE id=?;
 SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY total_amount;
 
 -- name: ReadTransactions :many
-SELECT transaction_id, "date", account_name, counter_party, amount, category_name FROM transactions_view ORDER BY "date" DESC;
+SELECT transaction_id, "date", account_name, counter_party, amount, ignore_when_summing, category_name FROM transactions_view ORDER BY "date" DESC;
 
 -- name: ReadTransactionsByAccountNameAndDate :many
-SELECT transaction_id, "date", account_name, counter_party, amount, category_name FROM transactions_view WHERE account_name=? AND strftime('%Y-%m', "date") = ?;
+SELECT transaction_id, "date", account_name, counter_party, amount, ignore_when_summing, category_name FROM transactions_view WHERE account_name=? AND strftime('%Y-%m', "date") = ?;
 
 -- name: ReadTransactionsByAccountName :many
-SELECT transaction_id, "date", account_name, counter_party, amount, category_name FROM transactions_view WHERE account_name=?;
+SELECT transaction_id, "date", account_name, counter_party, amount, ignore_when_summing, category_name FROM transactions_view WHERE account_name=?;
 
 -- name: ReadTransactionsByDate :many
-SELECT transaction_id, "date", account_name, counter_party, amount, category_name FROM transactions_view WHERE strftime('%Y-%m', "date") = ?;
+SELECT transaction_id, "date", account_name, counter_party, amount, ignore_when_summing, category_name FROM transactions_view WHERE strftime('%Y-%m', "date") = ?;
 
 -- name: AggregateTransactions :many
-SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY total_amount;
+SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE ignore_when_summing = false GROUP BY category_name ORDER BY total_amount;
 
 -- name: AggregateTransactionsByAccountName :many
 SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE account_name=? GROUP BY category_name ORDER BY total_amount;
