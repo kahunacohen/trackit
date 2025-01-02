@@ -10,6 +10,9 @@ SELECT transaction_id AS id, "date", counter_party, account_name, amount FROM tr
 -- name: UpdateTransactionCategory :exec
 UPDATE transactions SET category_id=? WHERE id=?;
 
+-- name: UpdateTransactionIgnore :exec
+UPDATE transactions SET ignore_when_summing=? WHERE id=?;
+
 -- name: ReadTransactionsAggregation :one
 SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY total_amount;
 
