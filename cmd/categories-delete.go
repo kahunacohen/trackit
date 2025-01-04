@@ -19,7 +19,7 @@ import (
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
-	Args:  cobra.ExactArgs(1), // Ensure exactly one argument is passed
+	Args:  cobra.ExactArgs(1),
 	Short: "Deletes a category. delete <name>",
 	Long:  `Deletes an existing category`,
 	RunE: func(cmd *cobra.Command, args []string) error {

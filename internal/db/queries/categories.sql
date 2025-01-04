@@ -9,3 +9,6 @@ INSERT OR IGNORE INTO categories ("name") VALUES (?);
 
 -- name: DeleteCategory :exec
 DELETE FROM categories WHERE id=?;
+
+-- name: UpdateCategory :exec
+UPDATE categories SET name= ? WHERE id= ?;
