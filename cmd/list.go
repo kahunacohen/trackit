@@ -20,7 +20,7 @@ import (
 
 // lsCmd represents the view command
 var lsCmd = &cobra.Command{
-	Use:   "ls",
+	Use:   "list",
 	Short: "Lists transactions",
 	Long:  `ls lists transactions.`,
 	RunE: func(cmd *cobra.Command, args []string) error {

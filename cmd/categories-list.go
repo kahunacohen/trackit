@@ -1,0 +1,51 @@
+/*
+Copyright © 2025 NAME HERE <EMAIL ADDRESS>
+*/
+package cmd
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+
+	"github.com/jedib0t/go-pretty/v6/table"
+	database "github.com/kahunacohen/trackit/internal/db"
+	"github.com/kahunacohen/trackit/internal/models"
+	"github.com/spf13/cobra"
+)
+
+// listCmd represents the list command
+var listCmd = &cobra.Command{
+	Use:   "list",
+	Short: "lists existing categories",
+	Long:  `lists `,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		homeDir, _ := os.UserHomeDir()
+		dbPath := filepath.Join(homeDir, "trackit.db")
+		db, err := database.GetDB(dbPath)
+		if err != nil {
+			log.Fatalf("Failed to open database: %v", err)
+		}
+		ctx := context.Background()
+		queries := models.New(db)
+		categories, err := queries.ReadAllCategories(ctx)
+		if err != nil {
+			return fmt.Errorf("error getting categories: %w", err)
+		}
+		t := table.NewWriter()
+		t.SetStyle(table.StyleLight)
+		t.SetOutputMirror(os.Stdout)
+		t.AppendHeader(table.Row{"ID", "Name"})
+		for _, category := range categories {
+			t.AppendRow([]interface{}{category.ID, category.Name})
+		}
+		t.Render()
+		return nil
+	},
+}
+
+func init() {
+	categoriesCmd.AddCommand(listCmd)
+}

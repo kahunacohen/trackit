@@ -25,7 +25,7 @@ var categorizeCmd = &cobra.Command{
 transactions (no flags passed), or by categorizing individual transactions by ID.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		transactionId, _ := cmd.Flags().GetInt64("transaction-id")
+		id, _ := cmd.Flags().GetInt64("	id")
 		homeDir, _ := os.UserHomeDir()
 		dbPath := filepath.Join(homeDir, "trackit.db")
 		db, err := database.GetDB(dbPath)
@@ -48,7 +48,7 @@ transactions (no flags passed), or by categorizing individual transactions by ID
 		for _, category := range categories {
 			categoryNames = append(categoryNames, category.Name)
 		}
-		if transactionId == 0 {
+		if id == 0 {
 			transactions, err := queries.ReadNonCategorizedTransactions(ctx)
 			if err != nil {
 				return fmt.Errorf("error reading non categorized transactions: %w", err)
@@ -76,9 +76,9 @@ transactions (no flags passed), or by categorizing individual transactions by ID
 			}
 
 		} else {
-			transaction, err := queries.ReadTransactionById(ctx, transactionId)
+			transaction, err := queries.ReadTransactionById(ctx, id)
 			if err != nil {
-				return fmt.Errorf("error getting transaction %d", transactionId)
+				return fmt.Errorf("error getting transaction %d", id)
 			}
 			t := table.NewWriter()
 			t.SetStyle(table.StyleLight)
@@ -105,6 +105,6 @@ transactions (no flags passed), or by categorizing individual transactions by ID
 }
 
 func init() {
-	categorizeCmd.Flags().Int64P("transaction-id", "i", 0, "valid transaction ID to categorize")
+	categorizeCmd.Flags().Int64P("id", "i", 0, "valid transaction ID to categorize")
 	rootCmd.AddCommand(categorizeCmd)
 }
