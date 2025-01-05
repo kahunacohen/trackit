@@ -4,12 +4,14 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/kahunacohen/trackit/internal/config"
 	database "github.com/kahunacohen/trackit/internal/db"
+	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +33,13 @@ to quickly create a Cobra application.`,
 			log.Fatalf("Failed to open database: %v", err)
 		}
 		defer db.Close()
-		conf, err := config.ParseConfig("./trackit.yaml")
+		queries := models.New(db)
+		configPath, err := queries.ReadSettingByName(context.Background(), "config-file")
+		if err != nil {
+			log.Fatalf("error getting config-file path from db: %v", err)
+		}
+
+		conf, err := config.ParseConfig(configPath)
 		if err != nil {
 			log.Fatal(err)
 		}
