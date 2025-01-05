@@ -5,6 +5,7 @@ sql:
       - internal/db/queries/accounts.sql
       - internal/db/queries/categories.sql
       - internal/db/queries/files.sql
+      - internal/db/queries/settings.sql
       - internal/db/queries/transactions.sql
 
     schema: internal/db/schema.sql
