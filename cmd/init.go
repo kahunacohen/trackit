@@ -33,6 +33,10 @@ to quickly create a Cobra application.`,
 		}
 		dbPath := filepath.Join(homeDir, "trackit.db")
 		configFilePath, _ := cmd.Flags().GetString("config-file")
+		configFilePath, err = filepath.Abs(configFilePath)
+		if err != nil {
+			log.Fatalf("error getting absolute path from passed config-file: %v", err)
+		}
 		conf, err := config.ParseConfig(configFilePath)
 		if err != nil {
 			log.Fatal(err)
@@ -53,7 +57,8 @@ to quickly create a Cobra application.`,
 		}
 		// Save config file path to db
 		queries := models.New(db)
-		err = queries.CreateSetting(context.Background(), models.CreateSettingParams{Name: "config-file", Value: configFilePath})
+		err = queries.CreateSetting(context.Background(),
+			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
 		if err != nil {
 			log.Fatalf("error writing config-file path to db: %v", err)
 		}
