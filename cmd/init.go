@@ -27,11 +27,13 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		homeDir, err := os.UserHomeDir()
+
+		dbFilePath, _ := cmd.Flags().GetString("db-path")
+		dbFilePath, err := filepath.Abs(dbFilePath)
 		if err != nil {
-			log.Fatalf("error getting home directory: %v", err)
+			log.Fatalf("error getting absolute path for db-path: %v", err)
 		}
-		dbPath := filepath.Join(homeDir, "trackit.db")
+
 		configFilePath, _ := cmd.Flags().GetString("config-file")
 		configFilePath, err = filepath.Abs(configFilePath)
 		if err != nil {
@@ -42,7 +44,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 		log.Println("parsed configuration file")
-		db, err := database.GetDB(dbPath)
+		db, err := database.GetDB(dbFilePath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
@@ -57,7 +59,13 @@ to quickly create a Cobra application.`,
 		}
 		// Save config file path to db
 		queries := models.New(db)
-		err = queries.CreateSetting(context.Background(),
+		// @TODO backround?
+		ctx := context.Background()
+		err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "db-path", Value: dbFilePath})
+		if err != nil {
+			log.Fatalf("error writing db-path to database: %v", err)
+		}
+		err = queries.CreateSetting(ctx,
 			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
 		if err != nil {
 			log.Fatalf("error writing config-file path to db: %v", err)
@@ -77,6 +85,8 @@ func init() {
 	if err != nil {
 		log.Fatalf("error getting home directory: %v", err)
 	}
+	initCmd.Flags().StringP("db-path", "d", homeDir+"/trackit.db",
+		"Specify the desired path to the trackit.db (sqlite) database file, including the name of the file")
 	initCmd.Flags().StringP("config-file", "c", homeDir+"/trackit.yaml",
 		"Specify the path to the trackit.yaml config file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
