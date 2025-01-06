@@ -47,6 +47,20 @@ func GetDB(pathToDBFile string) (*sql.DB, error) {
 	return sql.Open("sqlite", pathToDBFile)
 }
 
+func GetCachedDbPath() (*string, error) {
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return nil, fmt.Errorf("can't find user cache dir: %w", err)
+	}
+	cachePath := filepath.Join(cacheDir, "trackit", "cache")
+	bytes, err := os.ReadFile(cachePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading %s: %w", cachePath, err)
+	}
+	s := string(bytes)
+	return &s, nil
+}
+
 //go:embed schema.sql
 var schemaSQL string
 

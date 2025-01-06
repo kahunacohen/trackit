@@ -61,10 +61,30 @@ to quickly create a Cobra application.`,
 		queries := models.New(db)
 		// @TODO backround?
 		ctx := context.Background()
-		err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "db-path", Value: dbFilePath})
+
+		// save the path to the db in a local file for later access, not the db because storing
+		// the path in the db would create a circular dependency. We need the db to get the setting
+		// and need the setting to get the db.
+		cacheDir, err := os.UserCacheDir()
 		if err != nil {
-			log.Fatalf("error writing db-path to database: %v", err)
+			log.Fatalf("can't find user cache dir: %v", err)
 		}
+		cachePath := filepath.Join(cacheDir, "trackit")
+		if err := os.MkdirAll(cachePath, 0755); err != nil {
+			log.Fatalf("error creating trackit cache directory: %v", err)
+		}
+		file, err := os.OpenFile(filepath.Join(cachePath, "cache"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			log.Fatalf("failed to open cache file: %v", err)
+		}
+		defer file.Close() // Ensure the file is closed when done
+
+		// Write the string to the file
+		_, err = file.WriteString(dbFilePath)
+		if err != nil {
+			log.Fatalf("failed to write to cache file: %v", err)
+		}
+
 		err = queries.CreateSetting(ctx,
 			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
 		if err != nil {
