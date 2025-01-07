@@ -47,7 +47,7 @@ func GetDB(pathToDBFile string) (*sql.DB, error) {
 	return sql.Open("sqlite", pathToDBFile)
 }
 
-func GetCachedDbPath() (*string, error) {
+func GetDBPath() (*string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return nil, fmt.Errorf("can't find user cache dir: %w", err)

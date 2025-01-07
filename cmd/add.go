@@ -5,10 +5,7 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/kahunacohen/trackit/internal/config"
 	database "github.com/kahunacohen/trackit/internal/db"
@@ -22,13 +19,11 @@ var addCmd = &cobra.Command{
 	Long: `Adds transactions by parsing CSV files in the data directory. This will
 not parse files whose transactions that already have been added.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		s, _ := database.GetCachedDbPath()
-		fmt.Println(*s)
-
-		homeDir, _ := os.UserHomeDir()
-		dbPath := filepath.Join(homeDir, "trackit.db")
-
-		db, err := database.GetDB(dbPath)
+		dbPath, err := database.GetDBPath()
+		if err != nil {
+			log.Fatalf("error getting DB path: %v", err)
+		}
+		db, err := database.GetDB(*dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
