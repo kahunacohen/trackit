@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
-	_ "embed"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -67,16 +66,6 @@ func getDBPath() (*string, error) {
 	}
 	s := string(bytes)
 	return &s, nil
-}
-
-//go:embed schema.sql
-var schemaSQL string
-
-func InitSchema(conf *config.Config, db *sql.DB) error {
-	if _, err := db.Exec(schemaSQL); err != nil {
-		return err
-	}
-	return nil
 }
 
 type Transaction struct {

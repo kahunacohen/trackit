@@ -5,6 +5,8 @@ package cmd
 
 import (
 	"context"
+	"database/sql"
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -69,7 +71,7 @@ cache file in the user cache directory.`,
 		}
 		log.Println("created database")
 		defer db.Close()
-		if err = database.InitSchema(conf, db); err != nil {
+		if err = initSchema(db); err != nil {
 			return fmt.Errorf("error initializing database schema: %w", err)
 		}
 		log.Println("initialized schema")
@@ -106,4 +108,18 @@ func init() {
 	initCmd.Flags().StringP("config-file", "c", homeDir+"/trackit.yaml",
 		"Specify the path to the trackit.yaml config file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
+}
+
+//go:embed schema.sql
+var schemaSQL string
+
+// Initialize the schema by embedding the schema file (which sqlc also uses)
+// and executing it. Because the embedded schema file will only work at the current
+// directory, not in the internal/db directory from this go module, the build process must
+// copies the schema.sql file to this directory.
+func initSchema(db *sql.DB) error {
+	if _, err := db.Exec(schemaSQL); err != nil {
+		return err
+	}
+	return nil
 }
