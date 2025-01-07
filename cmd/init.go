@@ -56,42 +56,39 @@ cache file in the user cache directory.`,
 		configFilePath, _ := cmd.Flags().GetString("config-file")
 		configFilePath, err = filepath.Abs(configFilePath)
 		if err != nil {
-			log.Fatalf("error getting absolute path from passed config-file: %v", err)
+			return fmt.Errorf("error getting absolute path from passed config-file: %w", err)
 		}
 		conf, err := config.ParseConfig(configFilePath)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		log.Println("parsed configuration file")
 		db, err := database.GetDB()
 		if err != nil {
-			log.Fatalf("Failed to open database: %v", err)
+			return err
 		}
 		log.Println("created database")
 		defer db.Close()
 		if err = database.InitSchema(conf, db); err != nil {
-			log.Fatalf("error initializing schema: %v", err)
+			return fmt.Errorf("error initializing database schema: %w", err)
 		}
 		log.Println("initialized schema")
 		if err = database.InitAccounts(conf, db); err != nil {
-			log.Fatalf("error initializing accounts: %v", err)
+			return fmt.Errorf("error initializing accounts: %w", err)
 		}
 
 		queries := models.New(db)
-		// Create transaction view programatically
-
+		// @TODO context
 		ctx := context.Background()
-		// Save config file path to db
-
 		err = queries.CreateSetting(ctx,
 			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
 		if err != nil {
-			log.Fatalf("error writing config-file path to db: %v", err)
+			return fmt.Errorf("error writing config-file path to db: %w", err)
 		}
 		log.Println("initialized accounts")
 
 		if err = database.InitCategories(conf, db); err != nil {
-			log.Fatalf("error initializing categories: %v", err)
+			return fmt.Errorf("error initializing categories: %w", err)
 		}
 		log.Println("initialized categories")
 		log.Println("succesfully completed initialization")
