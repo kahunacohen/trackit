@@ -75,10 +75,11 @@ cache file in the user cache directory.`,
 		if err = database.InitAccounts(conf, db); err != nil {
 			log.Fatalf("error initializing accounts: %v", err)
 		}
-		// Save config file path to db
+
 		queries := models.New(db)
 		// @TODO backround?
 		ctx := context.Background()
+		// Save config file path to db
 
 		err = queries.CreateSetting(ctx,
 			models.CreateSettingParams{Name: "config-file", Value: configFilePath})

@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS categories (
 	"name" TEXT UNIQUE NOT NULL
 );
 
-INSERT INTO categories (name) VALUES
+INSERT OR IGNORE INTO categories (name) VALUES
 ('Business Expenses'),
 ('Childcare'),
 ('Clothing'),
@@ -63,6 +63,10 @@ INSERT INTO categories (name) VALUES
 ('Transportation'),
 ('Travel'),
 ('Utilities');
+
+-- Drop the view if it exists because sqlite does not allow
+-- the IF EXISTS with view creation.
+DROP VIEW IF EXISTS transactions_view;
 
 CREATE VIEW transactions_view AS
 SELECT 
