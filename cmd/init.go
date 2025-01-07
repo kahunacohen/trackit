@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -23,33 +24,33 @@ var initCmd = &cobra.Command{
 	Long: `Initializes the internal sqlite database and parses the configuration. Saves
 the path to the config file in the database and caches the path to the database file in a
 cache file in the user cache directory.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		dbFilePath, _ := cmd.Flags().GetString("db-path")
 		dbFilePath, err := filepath.Abs(dbFilePath)
 		if err != nil {
-			log.Fatalf("error getting absolute path for db-path: %v", err)
+			return fmt.Errorf("error getting absolute path for supplied db-path: %w", err)
 		}
 
-		// save the path to the db in a local cache file for later access. Don't
+		// Save the path to the db in a local cache file for later access. Don't
 		// save this to the DB  because storing
 		// that would create a circular dependency. We need the db to get the setting
 		// and need the setting to get the db.
 		cacheDir, err := os.UserCacheDir()
 		if err != nil {
-			log.Fatalf("can't find user cache dir: %v", err)
+			return fmt.Errorf("can't get user cache dir: %w", err)
 		}
 		cachePath := filepath.Join(cacheDir, "trackit")
 		if err := os.MkdirAll(cachePath, 0755); err != nil {
-			log.Fatalf("error creating trackit cache directory: %v", err)
+			return fmt.Errorf("error creating trackit cache directory: %w", err)
 		}
 		file, err := os.OpenFile(filepath.Join(cachePath, "cache"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
-			log.Fatalf("failed to open cache file: %v", err)
+			return fmt.Errorf("failed to open cache file: %w", err)
 		}
-		defer file.Close() // Ensure the file is closed when done
+		defer file.Close()
 		_, err = file.WriteString(dbFilePath)
 		if err != nil {
-			log.Fatalf("failed to write to cache file: %v", err)
+			return fmt.Errorf("failed to write db-path to cache file: %w", err)
 		}
 
 		configFilePath, _ := cmd.Flags().GetString("config-file")
@@ -77,7 +78,8 @@ cache file in the user cache directory.`,
 		}
 
 		queries := models.New(db)
-		// @TODO backround?
+		// Create transaction view programatically
+
 		ctx := context.Background()
 		// Save config file path to db
 
@@ -93,6 +95,7 @@ cache file in the user cache directory.`,
 		}
 		log.Println("initialized categories")
 		log.Println("succesfully completed initialization")
+		return nil
 	},
 }
 
