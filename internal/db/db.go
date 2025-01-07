@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -43,11 +44,18 @@ func RoundAmount(amount float64) float64 {
 	return math.Round(amount*100) / 100
 }
 
-func GetDB(pathToDBFile string) (*sql.DB, error) {
-	return sql.Open("sqlite", pathToDBFile)
+func GetDB() (*sql.DB, error) {
+	path, err := getDBPath()
+	if err != nil {
+		return nil, err
+	}
+	if path == nil {
+		return nil, errors.New("path to database is nil")
+	}
+	return sql.Open("sqlite", *path)
 }
 
-func GetDBPath() (*string, error) {
+func getDBPath() (*string, error) {
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
 		return nil, fmt.Errorf("can't find user cache dir: %w", err)

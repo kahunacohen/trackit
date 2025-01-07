@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"strconv"
 
 	database "github.com/kahunacohen/trackit/internal/db"
@@ -17,9 +15,7 @@ import (
 )
 
 var updateCmd = &cobra.Command{Use: "update", Args: cobra.ExactArgs(2), Short: "updates an existing category. update <id> <name>", Long: `updates an existing category by id. update <id> <name>`, RunE: func(cmd *cobra.Command, args []string) error {
-	homeDir, _ := os.UserHomeDir()
-	dbPath := filepath.Join(homeDir, "trackit.db")
-	db, err := database.GetDB(dbPath)
+	db, err := database.GetDB()
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}

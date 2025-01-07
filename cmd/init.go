@@ -27,11 +27,32 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		dbFilePath, _ := cmd.Flags().GetString("db-path")
 		dbFilePath, err := filepath.Abs(dbFilePath)
 		if err != nil {
 			log.Fatalf("error getting absolute path for db-path: %v", err)
+		}
+
+		// save the path to the db in a local cache file for later access. Don't
+		// save this to the DB  because storing
+		// that would create a circular dependency. We need the db to get the setting
+		// and need the setting to get the db.
+		cacheDir, err := os.UserCacheDir()
+		if err != nil {
+			log.Fatalf("can't find user cache dir: %v", err)
+		}
+		cachePath := filepath.Join(cacheDir, "trackit")
+		if err := os.MkdirAll(cachePath, 0755); err != nil {
+			log.Fatalf("error creating trackit cache directory: %v", err)
+		}
+		file, err := os.OpenFile(filepath.Join(cachePath, "cache"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		if err != nil {
+			log.Fatalf("failed to open cache file: %v", err)
+		}
+		defer file.Close() // Ensure the file is closed when done
+		_, err = file.WriteString(dbFilePath)
+		if err != nil {
+			log.Fatalf("failed to write to cache file: %v", err)
 		}
 
 		configFilePath, _ := cmd.Flags().GetString("config-file")
@@ -44,7 +65,7 @@ to quickly create a Cobra application.`,
 			log.Fatal(err)
 		}
 		log.Println("parsed configuration file")
-		db, err := database.GetDB(dbFilePath)
+		db, err := database.GetDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
@@ -61,29 +82,6 @@ to quickly create a Cobra application.`,
 		queries := models.New(db)
 		// @TODO backround?
 		ctx := context.Background()
-
-		// save the path to the db in a local file for later access, not the db because storing
-		// the path in the db would create a circular dependency. We need the db to get the setting
-		// and need the setting to get the db.
-		cacheDir, err := os.UserCacheDir()
-		if err != nil {
-			log.Fatalf("can't find user cache dir: %v", err)
-		}
-		cachePath := filepath.Join(cacheDir, "trackit")
-		if err := os.MkdirAll(cachePath, 0755); err != nil {
-			log.Fatalf("error creating trackit cache directory: %v", err)
-		}
-		file, err := os.OpenFile(filepath.Join(cachePath, "cache"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-		if err != nil {
-			log.Fatalf("failed to open cache file: %v", err)
-		}
-		defer file.Close() // Ensure the file is closed when done
-
-		// Write the string to the file
-		_, err = file.WriteString(dbFilePath)
-		if err != nil {
-			log.Fatalf("failed to write to cache file: %v", err)
-		}
 
 		err = queries.CreateSetting(ctx,
 			models.CreateSettingParams{Name: "config-file", Value: configFilePath})

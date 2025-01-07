@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	database "github.com/kahunacohen/trackit/internal/db"
@@ -26,9 +25,7 @@ transactions (no flags passed), or by categorizing individual transactions by ID
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		id, _ := cmd.Flags().GetInt64("	id")
-		homeDir, _ := os.UserHomeDir()
-		dbPath := filepath.Join(homeDir, "trackit.db")
-		db, err := database.GetDB(dbPath)
+		db, err := database.GetDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

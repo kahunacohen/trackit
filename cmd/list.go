@@ -6,7 +6,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -26,9 +25,7 @@ var lsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
-		homeDir, _ := os.UserHomeDir()
-		dbPath := filepath.Join(homeDir, "trackit.db")
-		db, err := database.GetDB(dbPath)
+		db, err := database.GetDB()
 		if err != nil {
 			return err
 		}

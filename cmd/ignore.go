@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
@@ -24,10 +22,7 @@ pass the --toggle flag along with --id`,
 		if len(ids) == 0 {
 			return fmt.Errorf("must specify at least one transaction id")
 		}
-
-		homeDir, _ := os.UserHomeDir()
-		dbPath := filepath.Join(homeDir, "trackit.db")
-		db, err := database.GetDB(dbPath)
+		db, err := database.GetDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

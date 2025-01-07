@@ -19,11 +19,7 @@ var addCmd = &cobra.Command{
 	Long: `Adds transactions by parsing CSV files in the data directory. This will
 not parse files whose transactions that already have been added.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		dbPath, err := database.GetDBPath()
-		if err != nil {
-			log.Fatalf("error getting DB path: %v", err)
-		}
-		db, err := database.GetDB(*dbPath)
+		db, err := database.GetDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

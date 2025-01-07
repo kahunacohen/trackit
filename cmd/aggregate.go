@@ -6,8 +6,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	database "github.com/kahunacohen/trackit/internal/db"
 
@@ -26,9 +24,7 @@ $ trackit aggregate --by account
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
 		by, _ := cmd.Flags().GetString("by")
-		homeDir, _ := os.UserHomeDir()
-		dbPath := filepath.Join(homeDir, "trackit.db")
-		db, err := database.GetDB(dbPath)
+		db, err := database.GetDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	database "github.com/kahunacohen/trackit/internal/db"
@@ -22,9 +21,7 @@ var listCmd = &cobra.Command{
 	Short: "lists existing categories",
 	Long:  `lists `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		homeDir, _ := os.UserHomeDir()
-		dbPath := filepath.Join(homeDir, "trackit.db")
-		db, err := database.GetDB(dbPath)
+		db, err := database.GetDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

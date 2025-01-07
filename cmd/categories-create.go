@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
 	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
@@ -22,9 +20,7 @@ var categoriesCreateCmd = &cobra.Command{
 	Short: "Creates a category. categories add <name>",
 	Long:  `Creates a category`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		homeDir, _ := os.UserHomeDir()
-		dbPath := filepath.Join(homeDir, "trackit.db")
-		db, err := database.GetDB(dbPath)
+		db, err := database.GetDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
