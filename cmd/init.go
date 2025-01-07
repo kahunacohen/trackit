@@ -19,13 +19,10 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Intializes internal database and parses configuration",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Intializes the internal sqlite database and parses the configuration",
+	Long: `Initializes the internal sqlite database and parses the configuration. Saves
+the path to the config file in the database and caches the path to the database file in a
+cache file in the user cache directory.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		dbFilePath, _ := cmd.Flags().GetString("db-path")
 		dbFilePath, err := filepath.Abs(dbFilePath)
@@ -103,7 +100,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("error getting home directory: %v", err)
 	}
-	initCmd.Flags().StringP("db-path", "d", homeDir+"/trackit.db",
+	initCmd.Flags().StringP("db-path", "d", filepath.Join(homeDir, "trackit.db"),
 		"Specify the desired path to the trackit.db (sqlite) database file, including the name of the file")
 	initCmd.Flags().StringP("config-file", "c", homeDir+"/trackit.yaml",
 		"Specify the path to the trackit.yaml config file, including the name of the file")
