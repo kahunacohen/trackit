@@ -158,7 +158,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				rateFilePath := filepath.Join(monthPath, "rate.yaml")
 				rateFileData, err := os.ReadFile(rateFilePath)
 				if err != nil {
-					return fmt.Errorf("could not read rate file at %s: %w", rateFilePath, err)
+					return fmt.Errorf("could not get a conversion rate from a rate.yaml file at %s. Error: %w", rateFilePath, err)
 				}
 				if err := yaml.Unmarshal(rateFileData, &exchangeRateConfig); err != nil {
 					return fmt.Errorf("error parsing rate file: %w", err)
