@@ -10,16 +10,19 @@ GOARCH=amd64
 # Directories
 SRC_DIR=.
 BUILD_DIR=./build
+DARWIN_DIR=$(BUILD_DIR)/darwin/amd64
+WINDOWS_DIR=$(BUILD_DIR)/windows/amd64
 SCHEMA_SRC=./internal/db/schema.sql
 SCHEMA_DEST=./cmd/schema.sql
 
 # File paths
 MAIN_FILE=$(SRC_DIR)/main.go
-BINARY_PATH=$(BUILD_DIR)/$(BINARY_NAME)
+MAC_BINARY_PATH=$(DARWIN_DIR)/$(BINARY_NAME)
+WIN_BINARY_PATH=$(WINDOWS_DIR)/$(BINARY_NAME).exe
 
 # Default target
 .PHONY: all
-all: copy-schema build
+all: copy-schema build build-windows
 
 # Copy schema.sql from internal/db to cmd/schema.sql
 .PHONY: copy-schema
@@ -31,8 +34,15 @@ copy-schema:
 .PHONY: build
 build: fmt vet
 	@echo "Building $(BINARY_NAME) for macOS..."
-	@mkdir -p $(BUILD_DIR)
-	$(GO) build -o $(BINARY_PATH) $(MAIN_FILE)
+	@mkdir -p $(DARWIN_DIR)
+	$(GO) build -o $(MAC_BINARY_PATH) $(MAIN_FILE)
+
+# Build the binary for Windows
+.PHONY: build-windows
+build-windows: fmt vet
+	@echo "Building $(BINARY_NAME) for Windows..."
+	@mkdir -p $(WINDOWS_DIR)
+	GOOS=windows GOARCH=amd64 $(GO) build -o $(WIN_BINARY_PATH) $(MAIN_FILE)
 
 # Format the code using gofmt
 .PHONY: fmt
@@ -62,7 +72,7 @@ clean:
 .PHONY: install
 install: build
 	@echo "Installing $(BINARY_NAME)..."
-	cp $(BINARY_PATH) /usr/local/bin/$(BINARY_NAME)
+	cp $(MAC_BINARY_PATH) /usr/local/bin/$(BINARY_NAME)
 
 # Lint code (if you have a linter, like golangci-lint)
 .PHONY: lint
@@ -74,4 +84,10 @@ lint:
 .PHONY: run
 run: build
 	@echo "Running $(BINARY_NAME)..."
-	$(BUILD_DIR)/$(BINARY_NAME)
+	$(MAC_BINARY_PATH) $(ARGS)
+
+# Pass subcommands (e.g., make run init will call trackit init)
+.PHONY: subcommand
+subcommand:
+	@echo "Passing subcommand to $(BINARY_NAME)..."
+	$(MAC_BINARY_PATH) $(ARGS)
