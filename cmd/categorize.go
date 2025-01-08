@@ -65,7 +65,7 @@ transactions (no flags passed), or by categorizing individual transactions by ID
 				}
 				err = queries.UpdateTransactionCategory(ctx, models.UpdateTransactionCategoryParams{
 					CategoryID: sql.NullInt64{Valid: true, Int64: categoryMap[categoryNameResult]},
-					ID:         transaction.ID})
+					ID:         transaction.TransactionID})
 				if err != nil {
 					return fmt.Errorf("error setting category: %w", err)
 				}

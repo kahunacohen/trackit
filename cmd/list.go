@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -34,7 +33,7 @@ var lsCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("error getting transactions: %w", err)
 		}
-		err = RenderTransactionTable(transactions)
+		err = renderTransactionTable(transactions)
 		if err != nil {
 			return fmt.Errorf("error rendering transactions: %w", err)
 		}
@@ -62,7 +61,6 @@ func init() {
 	rootCmd.AddCommand(lsCmd)
 	lsCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format")
 	lsCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
-	lsCmd.Flags().StringP("aggregate-by", "g", "", "What to aggregate by")
 }
 
 func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
@@ -78,41 +76,6 @@ func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
 	t.Render()
 }
 
-func RenderTransactionTable(rows []models.ReadTransactionsRow) error {
-	t := table.NewWriter()
-	t.SetStyle(table.StyleLight)
-	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"ID", "Date", "Payee", "Account", "Category", "Ignore", "Amount"})
-	var total float64
-	for _, row := range rows {
-		var category string
-		if row.CategoryName.Valid {
-			category = row.CategoryName.String
-		} else {
-			category = "-"
-		}
-		ignoreVal := "No"
-		if row.IgnoreWhenSumming == 1 {
-			ignoreVal = "Yes"
-		}
-		t.AppendRow([]interface{}{row.TransactionID, row.Date, row.CounterParty, accountKeyToName(row.AccountName), category, ignoreVal, fmt.Sprintf("%.2f", row.Amount)})
-		if row.IgnoreWhenSumming == 0 {
-			total += row.Amount
-		}
-	}
-	totalStr := strconv.FormatFloat(total, 'f', 2, 64) // 'f' for floating-point format, 2 digits after the decimal
-
-	t.AppendFooter(table.Row{"", "", "", "", "", "Total", totalStr})
-	t.SetColumnConfigs([]table.ColumnConfig{
-		{
-			Name:  "Amount",
-			Align: 4,
-		},
-	})
-	t.Render()
-	return nil
-}
-
 func accountKeyToName(account string) string {
 	var name string
 	split := strings.Split(account, "_")
@@ -125,8 +88,8 @@ func accountKeyToName(account string) string {
 	return strings.Title(name)
 }
 
-func getAccountTransactions(db *sql.DB, accountName string, date string) ([]models.ReadTransactionsRow, error) {
-	var rows []models.ReadTransactionsRow
+func getAccountTransactions(db *sql.DB, accountName string, date string) ([]models.TransactionsView, error) {
+	var transactions []models.TransactionsView
 	var err error
 	queries := models.New(db)
 	// account and date are not set
@@ -135,44 +98,33 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 	// @TODO this is a bit messy, repeated code, etc. Maybe make a wrapper function
 	// that handles the distinct types but with same fields.
 	if accountName == "" && date == "" {
-		rows, err = queries.ReadTransactions(ctx)
+		transactions, err = queries.ReadTransactions(ctx)
 		if err != nil {
 			return nil, err
 		}
 	} else if accountName != "" && date != "" {
-		xs, err := queries.ReadTransactionsByAccountNameAndDate(ctx, models.ReadTransactionsByAccountNameAndDateParams{
+		transactions, err = queries.ReadTransactionsByAccountNameAndDate(ctx, models.ReadTransactionsByAccountNameAndDateParams{
 			AccountName: accountName,
 			Date:        date})
 		if err != nil {
 			return nil, err
 		}
-		// convert type with same shape to the general type since they have the same fields.
-		for _, x := range xs {
-			rows = append(rows, models.ReadTransactionsRow(x))
-		}
+
 		// account name is set but not date
 	} else if accountName != "" && date == "" {
-		xs, err := queries.ReadTransactionsByAccountName(ctx, accountName)
+		transactions, err = queries.ReadTransactionsByAccountName(ctx, accountName)
 		if err != nil {
 			return nil, err
-		}
-		// convert type with same shape to the general type since they have the same fields.
-		for _, x := range xs {
-			rows = append(rows, models.ReadTransactionsRow(x))
 		}
 		// date is set but not account
 	} else {
-		xs, err := queries.ReadTransactionsByDate(ctx, date)
+		transactions, err = queries.ReadTransactionsByDate(ctx, date)
 		if err != nil {
 			return nil, err
-		}
-		// convert type with same shape to the general type since they have the same fields.
-		for _, x := range xs {
-			rows = append(rows, models.ReadTransactionsRow(x))
 		}
 	}
 	if err != nil {
 		return nil, err
 	}
-	return rows, nil
+	return transactions, nil
 }
