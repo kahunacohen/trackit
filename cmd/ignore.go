@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 
-	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +21,7 @@ pass the --toggle flag along with --id`,
 		if len(ids) == 0 {
 			return fmt.Errorf("must specify at least one transaction id")
 		}
-		db, err := database.GetDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

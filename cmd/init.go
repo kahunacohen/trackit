@@ -14,8 +14,8 @@ import (
 
 	"github.com/kahunacohen/trackit/internal/config"
 	"github.com/kahunacohen/trackit/internal/models"
+	"golang.org/x/exp/maps"
 
-	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/spf13/cobra"
 	_ "modernc.org/sqlite"
 )
@@ -65,7 +65,7 @@ cache file in the user cache directory.`,
 			return err
 		}
 		log.Println("parsed configuration file")
-		db, err := database.GetDB()
+		db, err := getDB()
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ cache file in the user cache directory.`,
 			return fmt.Errorf("error initializing database schema: %w", err)
 		}
 		log.Println("initialized schema")
-		if err = database.InitAccounts(conf, db); err != nil {
+		if err = initAccounts(conf, db); err != nil {
 			return fmt.Errorf("error initializing accounts: %w", err)
 		}
 
@@ -89,7 +89,7 @@ cache file in the user cache directory.`,
 		}
 		log.Println("initialized accounts")
 
-		if err = database.InitCategories(conf, db); err != nil {
+		if err = initCategories(conf, db); err != nil {
 			return fmt.Errorf("error initializing categories: %w", err)
 		}
 		log.Println("initialized categories")
@@ -119,6 +119,45 @@ var schemaSQL string
 // copies the schema.sql file to this directory.
 func initSchema(db *sql.DB) error {
 	if _, err := db.Exec(schemaSQL); err != nil {
+		return err
+	}
+	return nil
+}
+
+func initAccounts(conf *config.Config, db *sql.DB) error {
+	for accountName := range conf.Accounts {
+		// Does the account exist already? If not, insert it
+		var count int
+		query := "SELECT COUNT(*) FROM accounts WHERE name = ?"
+		err := db.QueryRow(query, accountName).Scan(&count)
+		if err != nil {
+			return err
+		}
+		if count == 0 {
+			_, err := db.Exec("INSERT INTO accounts (name, currency) VALUES (?, ?)",
+				accountName, conf.Accounts[accountName].Currency)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func initCategories(conf *config.Config, db *sql.DB) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	for _, category := range maps.Keys(conf.Categories) {
+		_, err := tx.Exec("INSERT INTO categories (name) VALUES (?)", category)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
 		return err
 	}
 	return nil

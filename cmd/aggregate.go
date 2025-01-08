@@ -4,10 +4,12 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"log"
 
-	database "github.com/kahunacohen/trackit/internal/db"
+	"github.com/kahunacohen/trackit/internal/models"
 
 	"github.com/spf13/cobra"
 )
@@ -24,13 +26,13 @@ $ trackit aggregate --by account
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
 		by, _ := cmd.Flags().GetString("by")
-		db, err := database.GetDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
 
 		if by == "category" {
-			aggregations, err := database.GetCategoryAggregation(db, account, date)
+			aggregations, err := getCategoryAggregation(db, account, date)
 			if err != nil {
 				return fmt.Errorf("error aggregating by category: %w", err)
 			}
@@ -48,4 +50,43 @@ func init() {
 	aggregateCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format with which to filter")
 	aggregateCmd.Flags().StringP("by", "b", "category", "What to aggregate total by")
 	rootCmd.AddCommand(aggregateCmd)
+}
+
+func getCategoryAggregation(db *sql.DB, account string, date string) ([]models.AggregateTransactionsRow, error) {
+	queries := models.New(db)
+	ctx := context.Background()
+	var err error
+	var rows []models.AggregateTransactionsRow
+	if account == "" && date == "" {
+		rows, err = queries.AggregateTransactions(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("error aggregating rows: %w", err)
+		}
+	} else if account != "" && date == "" {
+		xs, err := queries.AggregateTransactionsByAccountName(ctx, account)
+		if err != nil {
+			return nil, fmt.Errorf("error aggreating rows: %w", err)
+		}
+		for _, x := range xs {
+			rows = append(rows, models.AggregateTransactionsRow(x))
+		}
+	} else if account == "" && date != "" {
+		xs, err := queries.AggregateTransactionsByDate(ctx, date)
+		if err != nil {
+			return nil, fmt.Errorf("error aggreating rows: %w", err)
+		}
+		for _, x := range xs {
+			rows = append(rows, models.AggregateTransactionsRow(x))
+		}
+	} else {
+		xs, err := queries.AggregateTransactionsByAccountNameAndDate(ctx,
+			models.AggregateTransactionsByAccountNameAndDateParams{AccountName: account, Date: date})
+		if err != nil {
+			return nil, fmt.Errorf("error aggreating rows: %w", err)
+		}
+		for _, x := range xs {
+			rows = append(rows, models.AggregateTransactionsRow(x))
+		}
+	}
+	return rows, nil
 }

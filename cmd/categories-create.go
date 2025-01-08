@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 
-	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +19,7 @@ var categoriesCreateCmd = &cobra.Command{
 	Short: "Creates a category. categories add <name>",
 	Long:  `Creates a category`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := database.GetDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

@@ -4,6 +4,8 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"strconv"
@@ -12,7 +14,6 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/config"
-	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -25,11 +26,11 @@ var lsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
-		db, err := database.GetDB()
+		db, err := getDB()
 		if err != nil {
 			return err
 		}
-		transactions, err := database.GetAccountTransactions(db, account, date)
+		transactions, err := getAccountTransactions(db, account, date)
 		if err != nil {
 			return fmt.Errorf("error getting transactions: %w", err)
 		}
@@ -71,7 +72,7 @@ func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
 	t.AppendHeader(table.Row{"Category", "Total"})
 	for _, aggregate := range aggregates {
 		if aggregate.TotalAmount.Valid {
-			t.AppendRow([]interface{}{aggregate.CategoryName, database.RoundAmount(aggregate.TotalAmount.Float64)})
+			t.AppendRow([]interface{}{aggregate.CategoryName, roundAmount(aggregate.TotalAmount.Float64)})
 		}
 	}
 	t.Render()
@@ -122,4 +123,56 @@ func accountKeyToName(account string) string {
 		}
 	}
 	return strings.Title(name)
+}
+
+func getAccountTransactions(db *sql.DB, accountName string, date string) ([]models.ReadTransactionsRow, error) {
+	var rows []models.ReadTransactionsRow
+	var err error
+	queries := models.New(db)
+	// account and date are not set
+	ctx := context.Background()
+
+	// @TODO this is a bit messy, repeated code, etc. Maybe make a wrapper function
+	// that handles the distinct types but with same fields.
+	if accountName == "" && date == "" {
+		rows, err = queries.ReadTransactions(ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else if accountName != "" && date != "" {
+		xs, err := queries.ReadTransactionsByAccountNameAndDate(ctx, models.ReadTransactionsByAccountNameAndDateParams{
+			AccountName: accountName,
+			Date:        date})
+		if err != nil {
+			return nil, err
+		}
+		// convert type with same shape to the general type since they have the same fields.
+		for _, x := range xs {
+			rows = append(rows, models.ReadTransactionsRow(x))
+		}
+		// account name is set but not date
+	} else if accountName != "" && date == "" {
+		xs, err := queries.ReadTransactionsByAccountName(ctx, accountName)
+		if err != nil {
+			return nil, err
+		}
+		// convert type with same shape to the general type since they have the same fields.
+		for _, x := range xs {
+			rows = append(rows, models.ReadTransactionsRow(x))
+		}
+		// date is set but not account
+	} else {
+		xs, err := queries.ReadTransactionsByDate(ctx, date)
+		if err != nil {
+			return nil, err
+		}
+		// convert type with same shape to the general type since they have the same fields.
+		for _, x := range xs {
+			rows = append(rows, models.ReadTransactionsRow(x))
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

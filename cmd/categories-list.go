@@ -10,7 +10,6 @@ import (
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +20,7 @@ var listCmd = &cobra.Command{
 	Short: "lists existing categories",
 	Long:  `lists `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := database.GetDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

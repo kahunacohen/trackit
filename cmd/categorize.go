@@ -11,7 +11,6 @@ import (
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -25,7 +24,7 @@ transactions (no flags passed), or by categorizing individual transactions by ID
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		id, _ := cmd.Flags().GetInt64("	id")
-		db, err := database.GetDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

@@ -9,7 +9,6 @@ import (
 	"log"
 	"strconv"
 
-	database "github.com/kahunacohen/trackit/internal/db"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +20,7 @@ var deleteCmd = &cobra.Command{
 	Short: "Deletes a category. delete <name>",
 	Long:  `Deletes an existing category`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := database.GetDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
