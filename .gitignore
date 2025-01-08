@@ -1,3 +1,5 @@
+trackit.db
+build
 test/trackit
 test/data
 test/trackit.yaml
