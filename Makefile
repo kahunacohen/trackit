@@ -38,6 +38,8 @@ build: fmt vet
 	@echo "Building $(BINARY_NAME) for macOS..."
 	@mkdir -p $(DARWIN_DIR)
 	$(GO) build -o $(MAC_BINARY_PATH) $(MAIN_FILE)
+	tar -czvf $(DARWIN_DIR)/trackit-darwin-amd64.tar.gz -C $(DARWIN_DIR) trackit
+	rm $(DARWIN_DIR)/trackit
 
 # Build the binary for Ubantu
 .PHONY: build-ubantu
