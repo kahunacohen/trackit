@@ -12,6 +12,7 @@ SRC_DIR=.
 BUILD_DIR=./build
 DARWIN_DIR=$(BUILD_DIR)/darwin/amd64
 WINDOWS_DIR=$(BUILD_DIR)/windows/amd64
+UBANTU_X86_64_DIR=$(BUILD_DIR)/ubantu/x86_64
 SCHEMA_SRC=./internal/db/schema.sql
 SCHEMA_DEST=./cmd/schema.sql
 
@@ -19,10 +20,11 @@ SCHEMA_DEST=./cmd/schema.sql
 MAIN_FILE=$(SRC_DIR)/main.go
 MAC_BINARY_PATH=$(DARWIN_DIR)/$(BINARY_NAME)
 WIN_BINARY_PATH=$(WINDOWS_DIR)/$(BINARY_NAME).exe
+UBANTU_X86_BINARY_PATH=$(UBANTU_X86_64_DIR)/$(BINARY_NAME)
 
 # Default target
 .PHONY: all
-all: copy-schema build build-windows
+all: copy-schema build build-windows build-ubantu
 
 # Copy schema.sql from internal/db to cmd/schema.sql
 .PHONY: copy-schema
@@ -36,6 +38,13 @@ build: fmt vet
 	@echo "Building $(BINARY_NAME) for macOS..."
 	@mkdir -p $(DARWIN_DIR)
 	$(GO) build -o $(MAC_BINARY_PATH) $(MAIN_FILE)
+
+# Build the binary for Ubantu
+.PHONY: build-ubantu
+build-ubantu: fmt vet
+	@echo "Building $(BINARY_NAME) for Ubantu x86_64"
+	@mkdir -p $(UBANTU_X86_64_DIR)
+	GOOS=linux GOARCH=amd64 $(GO) build -o $(UBANTU_X86_BINARY_PATH) $(MAIN_FILE)
 
 # Build the binary for Windows
 .PHONY: build-windows

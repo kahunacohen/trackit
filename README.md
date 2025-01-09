@@ -4,6 +4,7 @@ meant for power-users (programmer types) who prefer working on the command-line 
 
 ## Features
 - [x] Cost: free.
+- [x] Cross-platform: MacOS, Windows, Ubantu.
 - [x] Entirely offline: no internet connection needed, and thus, no inherent privacy concerns.
 - [x] Sycning: leverages file-based [sqlite](https://sqlite.org/) database, so you are in charge of how
    (or if you even want to) sync the `*.db` file across multiple devices.
