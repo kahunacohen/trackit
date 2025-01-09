@@ -5,8 +5,8 @@ meant for computer power-users (programmer types) who prefer working on the comm
 ## Features
 - [x] Cost: free.
 - [x] Entirely offline: no internet connection needed, and, thus, no inherent privacy concerns.
-1. Sycning across devices: leverages file-based [sqlite](https://sqlite.org/) database, so you are in charge of how
+- [x] Sycning: leverages file-based [sqlite](https://sqlite.org/) database, so you are in charge of how
    (or if you even want to) sync the `*.db` file across devices.
-1. Performance: fast (see above)
-1. Multi currencies: Works with multi-currencies
-1. Transaction categorization
+- [x] Performance: fast (see above).
+- [x] Multi currencies: yes!
+- [x] Transaction categorization
