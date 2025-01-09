@@ -1,6 +1,6 @@
 # trackit
 trackit is a cross-platform, light-weight CLI (command-line-interface) personal finance tracking tool. It's
-meant for computer power-users (programmer types) who prefer working on the command-line to GUIs.
+meant for computer power-users (programmer types) who prefer working on the command-line over GUIs.
 
 ## Features
 - [x] Cost: free.
