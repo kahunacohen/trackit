@@ -65,7 +65,15 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	queries := models.New(db)
 	ctx := context.Background()
 	accountsToColIndices := conf.ColIndices()
-	dateEntries, err := os.ReadDir(conf.Data)
+	dataPath, err := queries.ReadSettingByName(ctx, "data-path")
+	if err != nil {
+		return fmt.Errorf("error getting data path setting: %w", err)
+	}
+	dataPath, err = filepath.Abs(dataPath)
+	if err != nil {
+		return fmt.Errorf("error getting absolute path for data directory: %w", err)
+	}
+	dateEntries, err := os.ReadDir(dataPath)
 	if err != nil {
 		return err
 	}
@@ -76,7 +84,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			log.Printf("skipping directory '%s'. Not a valid month directory in the form YYYY-mm", dateName)
 			continue
 		}
-		monthPath := filepath.Join(conf.Data, dateName)
+		monthPath := filepath.Join(dataPath, dateName)
 		fileEntries, err := os.ReadDir(monthPath)
 		if err != nil {
 			return err

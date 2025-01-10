@@ -17,7 +17,6 @@ type Config struct {
 	Accounts     map[string]Account  `yaml:"accounts"`
 	BaseCurrency string              `yaml:"base_currency"`
 	Categories   map[string][]string `yaml:"categories"`
-	Data         string              `yaml:"data"`
 }
 
 func ParseConfig(path string) (*Config, error) {
