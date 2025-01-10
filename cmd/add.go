@@ -94,7 +94,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 		}
 		for _, fileEntry := range fileEntries {
 			fileName := fileEntry.Name()
-			if fileName == "rate.yaml" || fileName == "rate.yml" {
+			if fileName == "rates.yaml" || fileName == "rates.yml" {
 				continue
 			}
 			validFileName := validateFileName(fileName, conf)
@@ -163,10 +163,10 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			var exchangeRateConfig ExchangeRatesWrapper
 			var exchangeRateNum *float64
 			if bankAccountCurrency != conf.BaseCurrency {
-				rateFilePath := filepath.Join(monthPath, "rate.yaml")
+				rateFilePath := filepath.Join(monthPath, "rates.yaml")
 				rateFileData, err := os.ReadFile(rateFilePath)
 				if err != nil {
-					return fmt.Errorf("could not get a conversion rate from a rate.yaml file at %s. Error: %w", rateFilePath, err)
+					return fmt.Errorf("could not get a conversion rate from a rates.yaml file at %s. Error: %w", rateFilePath, err)
 				}
 				if err := yaml.Unmarshal(rateFileData, &exchangeRateConfig); err != nil {
 					return fmt.Errorf("error parsing rate file: %w", err)

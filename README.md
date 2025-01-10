@@ -114,3 +114,14 @@ trackit categorize -h
 # etc.
 ```
 
+## Custom queries/Syncing
+Because the CSV files are parsed and stored in a relational sqlite db (in the trackit.db file), you can make custom
+queries against the database. Install sqlite. Then do:
+
+```
+sqlite3 ~/trackit.db
+```
+
+and make whatever queries you like. You can also save queries in a file and run them. You can also
+sync the db file using Google drive, or some other mechanism, to other devices and install trackit on those devices.
+
