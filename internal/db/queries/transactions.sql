@@ -41,4 +41,4 @@ SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS
 SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND account_name=? AND strftime('%Y-%m', date)=? GROUP BY category_name ORDER BY total_amount;
 
 -- name: SearchTransactions :many
-SELECT * FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%';
+SELECT * FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%' ORDER BY "date" DESC;

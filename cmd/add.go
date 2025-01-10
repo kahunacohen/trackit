@@ -286,7 +286,7 @@ func validateDateDirectoryName(name string) bool {
 	if len(split) != 2 {
 		return false
 	}
-	month := split[0]
+	month := split[1]
 	m, err := strconv.Atoi(month)
 	if err != nil {
 		return false
@@ -294,7 +294,7 @@ func validateDateDirectoryName(name string) bool {
 	if m < 1 || m > 12 {
 		return false
 	}
-	year := split[1]
+	year := split[0]
 	return len(year) == 4
 }
 
