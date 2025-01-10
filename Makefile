@@ -47,6 +47,8 @@ build-ubantu: fmt vet
 	@echo "Building $(BINARY_NAME) for Ubantu x86_64"
 	@mkdir -p $(UBANTU_X86_64_DIR)
 	GOOS=linux GOARCH=amd64 $(GO) build -o $(UBANTU_X86_BINARY_PATH) $(MAIN_FILE)
+	tar -czvf $(UBANTU_X86_64_DIR)/trackit-ubantu-x86.tar.gz -C $(UBANTU_X86_64_DIR) trackit
+	rm $(UBANTU_X86_64_DIR)/trackit
 
 # Build the binary for Windows
 .PHONY: build-windows
@@ -54,6 +56,9 @@ build-windows: fmt vet
 	@echo "Building $(BINARY_NAME) for Windows..."
 	@mkdir -p $(WINDOWS_DIR)
 	GOOS=windows GOARCH=amd64 $(GO) build -o $(WIN_BINARY_PATH) $(MAIN_FILE)
+	tar -czvf $(WINDOWS_DIR)/trackit-windows-amd64.tar.gz -C $(WINDOWS_DIR) trackit.exe
+	rm $(WINDOWS_DIR)/trackit.exe
+	
 
 # Format the code using gofmt
 .PHONY: fmt
