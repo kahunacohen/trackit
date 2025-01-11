@@ -79,7 +79,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	}
 	for _, dateEntry := range dateEntries {
 		dateName := dateEntry.Name()
-		validName := validateDateDirectoryName(dateName)
+		validName := validateDateFormat(dateName)
 		if !validName {
 			log.Printf("skipping directory '%s'. Not a valid month directory in the form YYYY-mm", dateName)
 			continue
@@ -279,23 +279,6 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 
 	}
 	return nil
-}
-
-func validateDateDirectoryName(name string) bool {
-	split := strings.Split(name, "-")
-	if len(split) != 2 {
-		return false
-	}
-	month := split[1]
-	m, err := strconv.Atoi(month)
-	if err != nil {
-		return false
-	}
-	if m < 1 || m > 12 {
-		return false
-	}
-	year := split[0]
-	return len(year) == 4
 }
 
 func validateFileName(fileName string, conf *config.Config) bool {
