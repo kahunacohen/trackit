@@ -25,10 +25,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var addCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Adds transactions",
-	Long: `Adds transactions by parsing CSV files in the data directory. This will
+var importCmd = &cobra.Command{
+	Use:   "import",
+	Short: "imports transactions",
+	Long: `imports transactions by parsing CSV files in the data directory. This will
 not parse files whose transactions that already have been added.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		db, err := getDB()
@@ -55,7 +55,7 @@ not parse files whose transactions that already have been added.`,
 }
 
 func init() {
-	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(importCmd)
 }
 
 func processFiles(conf *config.Config, db *sql.DB) error {
