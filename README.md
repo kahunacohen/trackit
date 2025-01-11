@@ -52,6 +52,9 @@ accounts:
 By default the config file should be at `~/trackit.yaml`, but you can customize that in the `--config-file` flag
 to `trackit init`.
 
+After running `trackit init` (see above), run `trackit import`. Now you can list transactions (`trackit list`), search (`trackit search`)
+etc. Run `trackit -h` for more options.
+
 ## Multi-currency
 trackit supports multi-currency. Add a base_currency key in `trackit.yaml` and set the appropriate currency code
 for each account. E.g.
