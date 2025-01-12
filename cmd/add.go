@@ -20,7 +20,7 @@ one of your CSV files. For example, say somebody gives you cash as a gift.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		flags := cmd.Flags()
 		amount, _ := flags.GetFloat64("amount")
-		counterParty, _ := flags.GetString("counter-payer")
+		counterParty, _ := flags.GetString("counter-party")
 		description, _ := flags.GetString("description")
 		ignore, _ := flags.GetBool("ignore")
 		category, _ := flags.GetString("category-id")
@@ -56,7 +56,7 @@ one of your CSV files. For example, say somebody gives you cash as a gift.`,
 
 func init() {
 	addCmd.Flags().Float64P("amount", "a", 0, "amount")
-	addCmd.Flags().StringP("counter-payer", "c", "", "account key from trackit.yaml to filter by account")
+	addCmd.Flags().StringP("counter-party", "c", "", "other party participating in transaction")
 	addCmd.Flags().StringP("description", "d", "", "description of transaction")
 	addCmd.Flags().BoolP("ignore", "i", false, "whether to ignore amount when summing or aggregating")
 	addCmd.Flags().Int64P("category-id", "t", 0, "an existing category ID. Do trackit categories list to see existing categories.")

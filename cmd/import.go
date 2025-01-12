@@ -303,15 +303,15 @@ func computeFileHash(file *os.File) (string, error) {
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
-func getCategory(conf *config.Config, counterPayer string) (*string, error) {
-	for categoryName, counterPayers := range conf.Categories {
-		for _, regexpStr := range counterPayers {
+func getCategory(conf *config.Config, counterParty string) (*string, error) {
+	for categoryName, counterParties := range conf.Categories {
+		for _, regexpStr := range counterParties {
 			// @TODO In efficent to compile so many times...
 			re, err := regexp.Compile(regexpStr)
 			if err != nil {
 				return nil, fmt.Errorf("error getting category: %w", err)
 			}
-			if re.MatchString(counterPayer) {
+			if re.MatchString(counterParty) {
 				return &categoryName, nil
 			}
 		}
