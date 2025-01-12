@@ -256,7 +256,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					}
 				}
 				err = queries.CreateTransaction(ctx, models.CreateTransactionParams{
-					AccountID:    bankAccountId,
+					AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
 					Date:         date.Format("2006-01-02"),
 					Amount:       amount,
 					CounterParty: counterParty,

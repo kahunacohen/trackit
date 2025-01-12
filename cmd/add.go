@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -38,6 +39,7 @@ one of your CSV files. For example, say somebody gives you cash as a gift.`,
 			}
 			queries := models.New(db)
 			err = queries.CreateTransaction(context.Background(), models.CreateTransactionParams{
+				AccountID:    sql.NullInt64{Valid: false},
 				Date:         date,
 				Amount:       amount,
 				CounterParty: counterParty,

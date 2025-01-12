@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 
 CREATE TABLE IF NOT EXISTS transactions (
 	id INTEGER PRIMARY KEY,
-	account_id INTEGER NOT NULL,
+	account_id INTEGER,
 	category_id INTEGER,
 	counter_party TEXT NOT NULL,
 	amount REAL NOT NULL,
