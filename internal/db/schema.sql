@@ -80,7 +80,7 @@ SELECT
     categories.name AS category_name
 FROM 
     transactions
-JOIN 
+LEFT JOIN 
     accounts ON transactions.account_id = accounts.id
 LEFT JOIN 
     categories ON transactions.category_id = categories.id;

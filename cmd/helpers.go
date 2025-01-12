@@ -78,9 +78,33 @@ func renderTransactionTable(rows []models.TransactionsView) error {
 	return nil
 }
 
-func validateDateFormat(name string) bool {
+func validateDateDirectoryFormat(name string) bool {
 	split := strings.Split(name, "-")
 	if len(split) != 2 {
+		return false
+	}
+	month := split[1]
+	m, err := strconv.Atoi(month)
+	if err != nil {
+		return false
+	}
+	if m < 1 || m > 12 {
+		return false
+	}
+	year := split[0]
+	return len(year) == 4
+}
+func validateDateWithDayFormat(name string) bool {
+	split := strings.Split(name, "-")
+	if len(split) != 3 {
+		return false
+	}
+	day := split[2]
+	d, err := strconv.Atoi(day)
+	if err != nil {
+		return false
+	}
+	if d < 1 || d > 31 {
 		return false
 	}
 	month := split[1]
