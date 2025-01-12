@@ -24,7 +24,12 @@ UBANTU_X86_BINARY_PATH=$(UBANTU_X86_64_DIR)/$(BINARY_NAME)
 
 # Default target
 .PHONY: all
-all: copy-schema build build-windows build-ubantu
+all: copy-schema sqlc-generate build build-windows build-ubantu
+
+.PHONY: sqlc-generate
+sqlc-generate:
+	@echo "generating sqlc stubs"
+	sqlc generate
 
 # Copy schema.sql from internal/db to cmd/schema.sql
 .PHONY: copy-schema
@@ -83,6 +88,7 @@ test:
 clean:
 	@echo "Cleaning build files..."
 	rm -rf $(BUILD_DIR)
+	rm -rf internal/models
 
 # Install the binary
 .PHONY: install

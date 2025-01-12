@@ -76,9 +76,12 @@ func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
 	t.Render()
 }
 
-func accountKeyToName(account string) string {
+func accountKeyToName(account sql.NullString) string {
+	if !account.Valid {
+		return "-"
+	}
 	var name string
-	split := strings.Split(account, "_")
+	split := strings.Split(account.String, "_")
 	for i, s := range split {
 		name += s
 		if i != len(split)-1 {
@@ -104,7 +107,7 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 		}
 	} else if accountName != "" && date != "" {
 		transactions, err = queries.ReadTransactionsByAccountNameAndDate(ctx, models.ReadTransactionsByAccountNameAndDateParams{
-			AccountName: accountName,
+			AccountName: sql.NullString{Valid: true, String: accountName},
 			Date:        date})
 		if err != nil {
 			return nil, err
@@ -112,7 +115,7 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 
 		// account name is set but not date
 	} else if accountName != "" && date == "" {
-		transactions, err = queries.ReadTransactionsByAccountName(ctx, accountName)
+		transactions, err = queries.ReadTransactionsByAccountName(ctx, sql.NullString{Valid: true, String: accountName})
 		if err != nil {
 			return nil, err
 		}

@@ -63,7 +63,7 @@ func getCategoryAggregation(db *sql.DB, account string, date string) ([]models.A
 			return nil, fmt.Errorf("error aggregating rows: %w", err)
 		}
 	} else if account != "" && date == "" {
-		xs, err := queries.AggregateTransactionsByAccountName(ctx, account)
+		xs, err := queries.AggregateTransactionsByAccountName(ctx, sql.NullString{Valid: true, String: account})
 		if err != nil {
 			return nil, fmt.Errorf("error aggreating rows: %w", err)
 		}
@@ -80,7 +80,7 @@ func getCategoryAggregation(db *sql.DB, account string, date string) ([]models.A
 		}
 	} else {
 		xs, err := queries.AggregateTransactionsByAccountNameAndDate(ctx,
-			models.AggregateTransactionsByAccountNameAndDateParams{AccountName: account, Date: date})
+			models.AggregateTransactionsByAccountNameAndDateParams{AccountName: sql.NullString{Valid: true, String: account}, Date: date})
 		if err != nil {
 			return nil, fmt.Errorf("error aggreating rows: %w", err)
 		}
