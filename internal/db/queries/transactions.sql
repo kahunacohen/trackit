@@ -1,5 +1,5 @@
 -- name: CreateTransaction :exec
-INSERT INTO transactions (account_id, date, amount, counter_party, category_id) VALUES (?, ?, ?, ?, ?);
+INSERT INTO transactions (account_id, date, amount, counter_party, category_id, ignore_when_summing) VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: ReadTransactionById :one
 SELECT * from transactions_view WHERE transaction_id=?;

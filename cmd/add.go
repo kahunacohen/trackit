@@ -20,16 +20,15 @@ var addCmd = &cobra.Command{
 one of your CSV files. For example, say somebody gives you cash as a gift.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		flags := cmd.Flags()
+		account, _ := flags.GetString("account")
 		amount, _ := flags.GetFloat64("amount")
+		categoryId, _ := flags.GetInt64("category-id")
 		counterParty, _ := flags.GetString("counter-party")
-		description, _ := flags.GetString("description")
-		ignore, _ := flags.GetBool("ignore")
-		category, _ := flags.GetString("category-id")
 		date, _ := flags.GetString("date")
+		// description, _ := flags.GetString("description")
+		ignore, _ := flags.GetBool("ignore")
 		if amount != 0 && counterParty != "" && date != "" {
-			fmt.Println(description)
-			fmt.Println(ignore)
-			fmt.Println(category)
+			ctx := context.Background()
 			if !validateDateWithDayFormat(date) {
 				return fmt.Errorf("date '%s' is invalid. Must be in form: YYYY/mm/dd", date)
 			}
@@ -38,11 +37,31 @@ one of your CSV files. For example, say somebody gives you cash as a gift.`,
 				return err
 			}
 			queries := models.New(db)
-			err = queries.CreateTransaction(context.Background(), models.CreateTransactionParams{
-				AccountID:    sql.NullInt64{Valid: false},
-				Date:         date,
-				Amount:       amount,
+			var accountIdNullInt64 sql.NullInt64
+			if account != "" {
+				accountId, err := queries.ReadAccountIdByName(ctx, account)
+				if err != nil {
+					return fmt.Errorf("error getting account ID: %w", err)
+				}
+				accountIdNullInt64 = sql.NullInt64{Valid: true, Int64: accountId}
+			} else {
+				accountIdNullInt64 = sql.NullInt64{Valid: false}
+			}
+			err = queries.CreateTransaction(ctx, models.CreateTransactionParams{
+				AccountID: accountIdNullInt64,
+				Amount:    amount,
+				CategoryID: func() sql.NullInt64 {
+					return sql.NullInt64{Valid: categoryId != 0, Int64: categoryId}
+				}(),
 				CounterParty: counterParty,
+				Date:         date,
+				IgnoreWhenSumming: func() int64 {
+					if ignore {
+						return 1
+					} else {
+						return 0
+					}
+				}(),
 			})
 			if err != nil {
 				return fmt.Errorf("error creating transaction: %w", err)
@@ -57,7 +76,8 @@ one of your CSV files. For example, say somebody gives you cash as a gift.`,
 }
 
 func init() {
-	addCmd.Flags().Float64P("amount", "a", 0, "amount")
+	addCmd.Flags().StringP("account", "a", "", "account key")
+	addCmd.Flags().Float64P("amount", "m", 0, "amount of transaction")
 	addCmd.Flags().StringP("counter-party", "c", "", "other party participating in transaction")
 	addCmd.Flags().StringP("description", "d", "", "description of transaction")
 	addCmd.Flags().BoolP("ignore", "i", false, "whether to ignore amount when summing or aggregating")
