@@ -127,4 +127,5 @@ sqlite3 ~/trackit.db
 
 and make whatever queries you like. You can also save queries in a file and run them. You can also
 sync the db file using Google drive, or some other mechanism, to other devices and install trackit on those devices.
+fpp
 
