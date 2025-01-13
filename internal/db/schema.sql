@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 	account_id INTEGER,
 	category_id INTEGER,
 	counter_party TEXT NOT NULL,
+    "description" TEXT,
 	amount REAL NOT NULL,
 	deposit REAL,
 	withdrawl REAL,
@@ -81,6 +82,7 @@ SELECT
     transactions.counter_party AS counter_party, 
     transactions.amount AS amount,
     transactions.ignore_when_summing as ignore_when_summing,
+    transactions.description AS "description",
     categories.name AS category_name
 FROM 
     transactions
