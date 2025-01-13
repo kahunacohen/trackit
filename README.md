@@ -18,7 +18,7 @@ meant for power-users (programmer types) who prefer working on the command-line 
 ## Getting started
 1. [Download](https://github.com/kahunacohen/trackit/releases/) the correct version of trackit for your operating system
 1. Put the executable in your path.
-1. By default, the data directory will be at `~/trackit-data`, but you can change that with the `--data-path` flag to
+1. By default, the data directory will be at `~/trackit-data`, but you can change that with the `--data-dir` flag to
    `trackit init`.
 1. Add directories and CSV files. For example, create directory `~/trackit-data/2024-10` and donwload CSV file for
    that month to that directory. Rename the CSV file after the name of your account (e.g. `bank_of_america.csv`). You should now have a file at: `~/trackit-data/2024-10/bank_of_america.csv`.

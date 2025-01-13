@@ -65,7 +65,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	queries := models.New(db)
 	ctx := context.Background()
 	accountsToColIndices := conf.ColIndices()
-	dataPath, err := queries.ReadSettingByName(ctx, "data-path")
+	dataPath, err := queries.ReadSettingByName(ctx, "data-dir")
 	if err != nil {
 		return fmt.Errorf("error getting data path setting: %w", err)
 	}
