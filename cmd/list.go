@@ -45,7 +45,12 @@ var lsCmd = &cobra.Command{
 			}
 		}
 		if account != "" {
-			conf, err := config.ParseConfig("./trackit.yaml")
+			queries := models.New(db)
+			configPath, err := queries.ReadSettingByName(context.Background(), "config-file")
+			if err != nil {
+				return fmt.Errorf("error getting config-file path from db: %w", err)
+			}
+			conf, err := config.ParseConfig(configPath)
 			if err != nil {
 				return fmt.Errorf("error parsing config: %v", err)
 			}
@@ -129,6 +134,9 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 		if err != nil {
 			return nil, nil, err
 		}
+		if len(ts) > 0 {
+			total = ts[0].TotalAmount.Float64
+		}
 		for _, t := range ts {
 			transactions = append(transactions, models.TransactionsView{
 				AccountID:         t.AccountID,
@@ -149,6 +157,9 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 		if err != nil {
 			return nil, nil, err
 		}
+		if len(ts) > 0 {
+			total = ts[0].TotalAmount.Float64
+		}
 		for _, t := range ts {
 			transactions = append(transactions, models.TransactionsView{
 				AccountID:         t.AccountID,
@@ -166,6 +177,9 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 		ts, err := queries.ReadTransactionsByDateWithSum(ctx, date)
 		if err != nil {
 			return nil, nil, err
+		}
+		if len(ts) > 0 {
+			total = ts[0].TotalAmount.Float64
 		}
 		for _, t := range ts {
 			transactions = append(transactions, models.TransactionsView{
