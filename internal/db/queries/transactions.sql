@@ -16,17 +16,25 @@ UPDATE transactions SET ignore_when_summing=? WHERE id=?;
 -- name: ReadTransactionsAggregation :one
 SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view GROUP BY category_name ORDER BY total_amount;
 
--- name: ReadTransactions :many
-SELECT * FROM transactions_view ORDER BY "date" DESC;
+-- name: ReadTransactionsWithSum :many
+SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view ORDER BY "date" DESC;
 
--- name: ReadTransactionsByAccountNameAndDate :many
-SELECT * FROM transactions_view WHERE account_name=? AND strftime('%Y-%m', "date") = ?;
+-- name: ReadTransactionsByAccountNameAndDateWithSum :many
+SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%Y-%m', "date") = ?;
 
--- name: ReadTransactionsByAccountName :many
-SELECT * FROM transactions_view WHERE account_name=?;
+-- name: ReadTransactionsByAccountNameWithSum :many
+SELECT *, SUM(amount) OVER () AS total_amount  FROM transactions_view WHERE account_name=?;
 
--- name: ReadTransactionsByDate :many
-SELECT * FROM transactions_view WHERE strftime('%Y-%m', "date") = ?;
+-- name: ReadTransactionsByDateWithSum :many
+SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE strftime('%Y-%m', "date") = ?;
+
+-- name: ReadTransactionsUnified :many
+SELECT *, SUM(amount) OVER () AS total_amount 
+FROM transactions_view
+WHERE 
+    (account_name = ? OR ? IS NULL) 
+    AND (strftime('%Y-%m', "date") = ? OR ? IS NULL)
+ORDER BY "date" DESC;
 
 -- name: AggregateTransactions :many
 SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE ignore_when_summing = false GROUP BY category_name ORDER BY total_amount;
