@@ -43,12 +43,11 @@ func getDBPath() (*string, error) {
 	return &s, nil
 }
 
-func renderTransactionTable(rows []models.TransactionsView) error {
+func renderTransactionTable(rows []models.TransactionsView, total *float64) error {
 	t := table.NewWriter()
 	t.SetStyle(table.StyleLight)
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"ID", "Date", "Payee", "Account", "Category", "Ignore", "Amount"})
-	var total float64
 	for _, row := range rows {
 		var category string
 		if row.CategoryName.Valid {
@@ -61,11 +60,11 @@ func renderTransactionTable(rows []models.TransactionsView) error {
 			ignoreVal = "Yes"
 		}
 		t.AppendRow([]interface{}{row.TransactionID, row.Date, row.CounterParty, accountKeyToName(row.AccountName), category, ignoreVal, fmt.Sprintf("%.2f", row.Amount)})
-		if row.IgnoreWhenSumming == 0 {
-			total += row.Amount
-		}
 	}
-	totalStr := strconv.FormatFloat(total, 'f', 2, 64) // 'f' for floating-point format, 2 digits after the decimal
+	totalStr := "0.00"
+	if total != nil {
+		totalStr = strconv.FormatFloat(*total, 'f', 2, 64) // 'f' for floating-point format, 2 digits after the decimal
+	}
 
 	t.AppendFooter(table.Row{"", "", "", "", "", "Total", totalStr})
 	t.SetColumnConfigs([]table.ColumnConfig{

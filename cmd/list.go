@@ -29,11 +29,12 @@ var lsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		transactions, err := getAccountTransactions(db, account, date)
+		transactions, total, err := getAccountTransactions(db, account, date)
 		if err != nil {
 			return fmt.Errorf("error getting transactions: %w", err)
 		}
-		err = renderTransactionTable(transactions)
+
+		err = renderTransactionTable(transactions, total)
 		if err != nil {
 			return fmt.Errorf("error rendering transactions: %w", err)
 		}
@@ -90,10 +91,10 @@ func accountKeyToName(account sql.NullString) string {
 	}
 	return strings.Title(name)
 }
-
-func getAccountTransactions(db *sql.DB, accountName string, date string) ([]models.TransactionsView, error) {
+func getAccountTransactions(db *sql.DB, accountName string, date string) ([]models.TransactionsView, *float64, error) {
 	var transactions []models.TransactionsView
 	var err error
+	var total float64
 	queries := models.New(db)
 	// account and date are not set
 	ctx := context.Background()
@@ -102,36 +103,83 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 	// that handles the distinct types but with same fields.
 	if accountName == "" && date == "" {
 		ts, _ := queries.ReadTransactionsWithSum(ctx)
-		for _, t := range ts {
-			fmt.Println(t.TotalAmount)
-		}
-		transactions, err = queries.ReadTransactions(ctx)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		if len(ts) > 0 {
+			total = ts[0].TotalAmount.Float64
+		}
+		for _, t := range ts {
+			transactions = append(transactions, models.TransactionsView{
+				AccountID:         t.AccountID,
+				AccountName:       t.AccountName,
+				TransactionID:     t.TransactionID,
+				Date:              t.Date,
+				CounterParty:      t.CounterParty,
+				Amount:            t.Amount,
+				IgnoreWhenSumming: t.IgnoreWhenSumming,
+				Description:       t.Description,
+				CategoryName:      t.CategoryName,
+			})
 		}
 	} else if accountName != "" && date != "" {
-		transactions, err = queries.ReadTransactionsByAccountNameAndDate(ctx, models.ReadTransactionsByAccountNameAndDateParams{
+		ts, err := queries.ReadTransactionsByAccountNameAndDateWithSum(ctx, models.ReadTransactionsByAccountNameAndDateWithSumParams{
 			AccountName: sql.NullString{Valid: true, String: accountName},
 			Date:        date})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		for _, t := range ts {
+			transactions = append(transactions, models.TransactionsView{
+				AccountID:         t.AccountID,
+				AccountName:       t.AccountName,
+				TransactionID:     t.TransactionID,
+				Date:              t.Date,
+				CounterParty:      t.CounterParty,
+				Amount:            t.Amount,
+				IgnoreWhenSumming: t.IgnoreWhenSumming,
+				Description:       t.Description,
+				CategoryName:      t.CategoryName,
+			})
 		}
 
 		// account name is set but not date
 	} else if accountName != "" && date == "" {
-		transactions, err = queries.ReadTransactionsByAccountName(ctx, sql.NullString{Valid: true, String: accountName})
+		ts, err := queries.ReadTransactionsByAccountNameWithSum(ctx, sql.NullString{Valid: true, String: accountName})
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		// date is set but not account
+		for _, t := range ts {
+			transactions = append(transactions, models.TransactionsView{
+				AccountID:         t.AccountID,
+				AccountName:       t.AccountName,
+				TransactionID:     t.TransactionID,
+				Date:              t.Date,
+				CounterParty:      t.CounterParty,
+				Amount:            t.Amount,
+				IgnoreWhenSumming: t.IgnoreWhenSumming,
+				Description:       t.Description,
+				CategoryName:      t.CategoryName,
+			})
+		}
 	} else {
-		transactions, err = queries.ReadTransactionsByDate(ctx, date)
+		ts, err := queries.ReadTransactionsByDateWithSum(ctx, date)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		for _, t := range ts {
+			transactions = append(transactions, models.TransactionsView{
+				AccountID:         t.AccountID,
+				AccountName:       t.AccountName,
+				TransactionID:     t.TransactionID,
+				Date:              t.Date,
+				CounterParty:      t.CounterParty,
+				Amount:            t.Amount,
+				IgnoreWhenSumming: t.IgnoreWhenSumming,
+				Description:       t.Description,
+				CategoryName:      t.CategoryName,
+			})
 		}
 	}
-	if err != nil {
-		return nil, err
-	}
-	return transactions, nil
+	return transactions, &total, nil
 }

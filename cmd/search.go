@@ -28,7 +28,7 @@ trackit search <text>`,
 			return err
 		}
 		queries := models.New(db)
-		transactions, err := queries.SearchTransactions(context.Background(), sql.NullString{Valid: true, String: args[0]})
+		transactions, err := queries.SearchTransactionsWithSum(context.Background(), sql.NullString{Valid: true, String: args[0]})
 		if err != nil {
 			return fmt.Errorf("error searching transactions: %w", err)
 		}
