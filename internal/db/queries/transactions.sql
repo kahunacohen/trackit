@@ -28,14 +28,6 @@ SELECT *, SUM(amount) OVER () AS total_amount  FROM transactions_view WHERE acco
 -- name: ReadTransactionsByDateWithSum :many
 SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE strftime('%Y-%m', "date") = ?;
 
--- name: ReadTransactionsUnified :many
-SELECT *, SUM(amount) OVER () AS total_amount 
-FROM transactions_view
-WHERE 
-    (account_name = ? OR ? IS NULL) 
-    AND (strftime('%Y-%m', "date") = ? OR ? IS NULL)
-ORDER BY "date" DESC;
-
 -- name: AggregateTransactions :many
 SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(amount) AS total_amount FROM transactions_view WHERE ignore_when_summing = false GROUP BY category_name ORDER BY total_amount;
 

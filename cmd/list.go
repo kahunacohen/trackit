@@ -103,14 +103,14 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 	if accountName == "" && date == "" {
 		ts, _ := queries.ReadTransactionsWithSum(ctx)
 		for _, t := range ts {
-			fmt.Println(t.TotalAmount.Float64)
+			fmt.Println(t.TotalAmount)
 		}
-		transactions, err = queries.ReadTransactionsWithSum(ctx)
+		transactions, err = queries.ReadTransactions(ctx)
 		if err != nil {
 			return nil, err
 		}
 	} else if accountName != "" && date != "" {
-		transactions, err = queries.ReadTransactionsByAccountNameAndDateWithSum(ctx, models.ReadTransactionsByAccountNameAndDateParams{
+		transactions, err = queries.ReadTransactionsByAccountNameAndDate(ctx, models.ReadTransactionsByAccountNameAndDateParams{
 			AccountName: sql.NullString{Valid: true, String: accountName},
 			Date:        date})
 		if err != nil {
@@ -119,7 +119,7 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 
 		// account name is set but not date
 	} else if accountName != "" && date == "" {
-		transactions, err = queries.ReadTransactionsByAccountNameWithSum(ctx, sql.NullString{Valid: true, String: accountName})
+		transactions, err = queries.ReadTransactionsByAccountName(ctx, sql.NullString{Valid: true, String: accountName})
 		if err != nil {
 			return nil, err
 		}
