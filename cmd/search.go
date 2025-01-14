@@ -28,11 +28,29 @@ trackit search <text>`,
 			return err
 		}
 		queries := models.New(db)
-		transactions, err := queries.SearchTransactionsWithSum(context.Background(), sql.NullString{Valid: true, String: args[0]})
+		var transactions []models.TransactionsView
+		ts, err := queries.SearchTransactionsWithSum(context.Background(), sql.NullString{Valid: true, String: args[0]})
+		var total float64
+		if len(ts) > 0 {
+			total = ts[0].TotalAmount.Float64
+		}
 		if err != nil {
 			return fmt.Errorf("error searching transactions: %w", err)
 		}
-		renderTransactionTable(transactions)
+		for _, t := range ts {
+			transactions = append(transactions, models.TransactionsView{
+				AccountID:         t.AccountID,
+				AccountName:       t.AccountName,
+				TransactionID:     t.TransactionID,
+				Date:              t.Date,
+				CounterParty:      t.CounterParty,
+				Amount:            t.Amount,
+				IgnoreWhenSumming: t.IgnoreWhenSumming,
+				Description:       t.Description,
+				CategoryName:      t.CategoryName,
+			})
+		}
+		renderTransactionTable(transactions, &total)
 		return nil
 	},
 }
