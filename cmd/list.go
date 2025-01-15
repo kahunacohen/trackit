@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -82,20 +81,6 @@ func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
 	t.Render()
 }
 
-func accountKeyToName(account sql.NullString) string {
-	if !account.Valid {
-		return "-"
-	}
-	var name string
-	split := strings.Split(account.String, "_")
-	for i, s := range split {
-		name += s
-		if i != len(split)-1 {
-			name += " "
-		}
-	}
-	return strings.Title(name)
-}
 func getAccountTransactions(db *sql.DB, accountName string, date string) ([]models.TransactionsView, *float64, error) {
 	var transactions []models.TransactionsView
 	var err error

@@ -117,3 +117,18 @@ func validateDateWithDayFormat(name string) bool {
 	year := split[0]
 	return len(year) == 4
 }
+
+func accountKeyToName(account sql.NullString) string {
+	if !account.Valid {
+		return "-"
+	}
+	var name string
+	split := strings.Split(account.String, "_")
+	for i, s := range split {
+		name += s
+		if i != len(split)-1 {
+			name += " "
+		}
+	}
+	return strings.Title(name)
+}

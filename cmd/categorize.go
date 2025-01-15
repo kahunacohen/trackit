@@ -6,6 +6,7 @@ package cmd
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -20,7 +21,8 @@ var categorizeCmd = &cobra.Command{
 	Use:   "categorize",
 	Short: "Categorizes transactions",
 	Long: `categorize categorizes transactions either by interactively categorizing all un-categorized
-transactions (no flags passed), or by categorizing individual transactions by ID.`,
+transactions (no flags passed), or by categorizing an individual transaction by ID (trackit categorize <transaction_id>).
+Get the transaction ID by doing trackit list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		id, _ := cmd.Flags().GetInt64("	id")
@@ -54,7 +56,17 @@ transactions (no flags passed), or by categorizing individual transactions by ID
 				t.SetStyle(table.StyleLight)
 				t.SetOutputMirror(os.Stdout)
 				t.AppendHeader(table.Row{"Date", "Account", "Payee", "Amount"})
-				t.AppendRow([]interface{}{transaction.Date, transaction.AccountName, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
+				var accountKey string
+				if transaction.AccountName.Valid {
+					accountKey = transaction.AccountName.String
+				} else {
+					return errors.New("account is null")
+				}
+
+				t.AppendRow([]interface{}{transaction.Date,
+					accountKeyToName(sql.NullString{Valid: true, String: accountKey}),
+					transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
+
 				prompt := promptui.Select{
 					Label: t.Render(),
 					Items: categoryNames,
