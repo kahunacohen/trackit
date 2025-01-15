@@ -65,7 +65,7 @@ var lsCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(lsCmd)
-	lsCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format")
+	lsCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
 	lsCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
 }
 

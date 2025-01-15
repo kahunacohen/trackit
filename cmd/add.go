@@ -82,6 +82,6 @@ func init() {
 	addCmd.Flags().StringP("description", "d", "", "description of transaction")
 	addCmd.Flags().BoolP("ignore", "i", false, "whether to ignore amount when summing or aggregating")
 	addCmd.Flags().Int64P("category-id", "t", 0, "an existing category ID. Do trackit categories list to see existing categories.")
-	addCmd.Flags().StringP("date", "e", "", "The date in the form YYYY/mm")
+	addCmd.Flags().StringP("date", "e", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
 	rootCmd.AddCommand(addCmd)
 }

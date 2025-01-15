@@ -57,6 +57,6 @@ trackit search <text>`,
 
 func init() {
 	rootCmd.AddCommand(searchCmd)
-	searchCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format")
+	searchCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
 	searchCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
 }
