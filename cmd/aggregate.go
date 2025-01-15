@@ -47,7 +47,7 @@ $ trackit aggregate --by account
 
 func init() {
 	aggregateCmd.Flags().StringP("account", "a", "", "account key from trackit.yaml to filter by account")
-	aggregateCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format with which to filter")
+	aggregateCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
 	aggregateCmd.Flags().StringP("by", "b", "category", "What to aggregate total by")
 	rootCmd.AddCommand(aggregateCmd)
 }

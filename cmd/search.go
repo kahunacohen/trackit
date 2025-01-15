@@ -21,6 +21,7 @@ trackit search <text>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
+		// @TODO add this in filtering
 		fmt.Println(date)
 		fmt.Println(account)
 		db, err := getDB()

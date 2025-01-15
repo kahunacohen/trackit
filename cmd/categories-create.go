@@ -12,12 +12,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// categoriesAdd.goCmd represents the categoriesAdd.go command
 var categoriesCreateCmd = &cobra.Command{
 	Use:   "create",
-	Args:  cobra.ExactArgs(1), // Ensure exactly one argument is passed
+	Args:  cobra.ExactArgs(1),
 	Short: "Creates a category. categories add <name>",
-	Long:  `Creates a category`,
+	Long:  `Creates a category, taking one positional argument (category name). categories add <name>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		db, err := getDB()
 		if err != nil {
