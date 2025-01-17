@@ -16,7 +16,8 @@ var ignoreCmd = &cobra.Command{
 	Use:   "ignore",
 	Short: "Marks a transaction by ID as ignored when summing",
 	Long: `Mark a specific transaction to ignore when summing or aggregating. To undo ignore,
-pass the --toggle flag along with --id`,
+pass the --toggle flag along with --id. You can mark multiple transactions by passing multiple
+--id flags. E.g. trackit ignore --id 1 --id 2`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(ids) == 0 {
 			return fmt.Errorf("must specify at least one transaction id")
