@@ -22,7 +22,7 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Intializes the internal sqlite database and parses the configuration",
+	Short: "Intializes the internal sqlite database and parses the config.",
 	Long: `Initializes the internal sqlite database and parses the configuration. Saves
 the path to the config file in the database and caches the path to the database file in a
 cache file in the user cache directory.`,

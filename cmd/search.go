@@ -14,7 +14,7 @@ import (
 
 var searchCmd = &cobra.Command{
 	Use:   "search",
-	Short: "Searches transactions for text. trackit search <text>",
+	Short: "Searches transactions' counter_party field for text. trackit search <text>",
 	Long: `Searches the transaction counter payer for text. Can filter by account and date. E.g.
 trackit search <text>`,
 	Args: cobra.ExactArgs(1),

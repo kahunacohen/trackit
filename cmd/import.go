@@ -29,7 +29,7 @@ var importCmd = &cobra.Command{
 	Use:   "import",
 	Short: "imports transactions",
 	Long: `imports transactions by parsing CSV files in the data directory. This will
-not parse files whose transactions that already have been added.`,
+not parse files whose transactions that already have been added and will ignore non-CSV files.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		db, err := getDB()
 		if err != nil {
