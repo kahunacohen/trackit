@@ -14,7 +14,7 @@ import (
 
 var ignoreCmd = &cobra.Command{
 	Use:   "ignore",
-	Short: "Mark a transaction by ID as ignored when summing",
+	Short: "Marks a transaction by ID as ignored when summing",
 	Long: `Mark a specific transaction to ignore when summing or aggregating. To undo ignore,
 pass the --toggle flag along with --id`,
 	RunE: func(cmd *cobra.Command, args []string) error {

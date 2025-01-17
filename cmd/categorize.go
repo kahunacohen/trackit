@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/models"
@@ -18,14 +19,27 @@ import (
 )
 
 var categorizeCmd = &cobra.Command{
-	Use:   "categorize",
+	Use: "categorize",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 1 {
+			return fmt.Errorf("too many arguments, expected at most 1")
+		}
+		return nil
+	},
 	Short: "Categorizes transactions",
-	Long: `categorize categorizes transactions either by interactively categorizing all un-categorized
+	Long: `categorize transactions either by interactively categorizing all un-categorized
 transactions (no flags passed), or by categorizing an individual transaction by ID (trackit categorize <transaction_id>).
-Get the transaction ID by doing trackit list`,
+Get the transaction ID by doing trackit list. To update existing transaction categories, just run trackit categorize (or)
+trackit categorize <id>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-
-		id, _ := cmd.Flags().GetInt64("	id")
+		var transactionId int
+		var strconvErr error
+		if len(args) == 1 {
+			transactionId, strconvErr = strconv.Atoi(args[0])
+			if strconvErr != nil {
+				return fmt.Errorf("error parsing transaction id: %w", strconvErr)
+			}
+		}
 		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
@@ -46,7 +60,7 @@ Get the transaction ID by doing trackit list`,
 		for _, category := range categories {
 			categoryNames = append(categoryNames, category.Name)
 		}
-		if id == 0 {
+		if transactionId == 0 {
 			transactions, err := queries.ReadNonCategorizedTransactions(ctx)
 			if err != nil {
 				return fmt.Errorf("error reading non categorized transactions: %w", err)
@@ -84,15 +98,15 @@ Get the transaction ID by doing trackit list`,
 			}
 
 		} else {
-			transaction, err := queries.ReadTransactionById(ctx, id)
+			transaction, err := queries.ReadTransactionById(ctx, int64(transactionId))
 			if err != nil {
-				return fmt.Errorf("error getting transaction %d", id)
+				return fmt.Errorf("error getting transaction %d", transactionId)
 			}
 			t := table.NewWriter()
 			t.SetStyle(table.StyleLight)
 			t.SetOutputMirror(os.Stdout)
 			t.AppendHeader(table.Row{"Date", "Account", "Payee", "Amount"})
-			t.AppendRow([]interface{}{transaction.Date, transaction.AccountName, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
+			t.AppendRow([]interface{}{transaction.Date, transaction.AccountName.String, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
 			prompt := promptui.Select{
 				Label: t.Render(),
 				Items: categoryNames,
@@ -113,6 +127,5 @@ Get the transaction ID by doing trackit list`,
 }
 
 func init() {
-	categorizeCmd.Flags().Int64P("id", "i", 0, "valid transaction ID to categorize")
 	rootCmd.AddCommand(categorizeCmd)
 }
