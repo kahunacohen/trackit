@@ -141,7 +141,7 @@ queries against the database. You must install sqlite. Then do:
 sqlite3 ~/trackit.db
 ```
 
-...and make whatever queries you like. You can also save queries in a file and run them. You can also
+...and make whatever queries you like. You can also save queries in a file and run them. You could
 sync the db file using Google drive, or some other mechanism, to other devices and install trackit on those devices.
 
 ## More
