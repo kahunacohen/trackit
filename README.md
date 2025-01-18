@@ -28,12 +28,11 @@ bank accounts into an embedded, file-based [sqlite](https://sqlite.org/) databas
    from your bank account for that month to that directory. Rename the CSV file after the name of your account (e.g. `bank_of_america.csv`). You should now have a file at: `~/trackit-data/2024-10/bank_of_america.csv`. Put other accounts' transaction CSV files for that month
    under that same directory.
 1. Create a `trackit.yaml` configuration file. Each account key in the `trackit.yaml` file should match the corresponding file name under each
-   month directory. Map each CSV heading to a database table  under `headings` in the trackit.yaml header. The table names
-   in the database are:
-
-   1. `transaction_date`
-   1. `counter_party` (The party you either pay to or receive money from)
-   1. `amount`
+   month directory. In the `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
+   
+   * `transaction_date`
+   * `counter_party`
+   * `amount`
 
 If a header in the CSV file doesn't map to any table, set the table to: `~`. Here's an example `trackit.yaml` configuration file:
 
@@ -46,14 +45,18 @@ accounts:
     # mm/dd/yyyy.
     date_layout: 01/02/2006
     headers:
-      - name: Posted Date
-        table: transaction_date
+      - name: Posted Date # This is the CSV column header for the bank_of_america.csv file
+        table: transaction_date # This is the trackit database table it maps to
+
       - name: Reference Number
-        table: ~
+        table: ~ # There is no trackit table for this column
+
       - name: Payee
-        table: counter_party
+        table: counter_party # counter_party is the subject party for the transaction
+
       - name: Address
         table: ~
+
       - name: Amount
         table: amount
 ```
