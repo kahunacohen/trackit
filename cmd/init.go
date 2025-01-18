@@ -27,8 +27,8 @@ var initCmd = &cobra.Command{
 the path to the config file in the database and caches the path to the database file in a
 cache file in the user cache directory.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dataDir, _ := cmd.Flags().GetString("data-dir")
-		dataDir, err := filepath.Abs(dataDir)
+		dataPath, _ := cmd.Flags().GetString("data-path")
+		dataPath, err := filepath.Abs(dataPath)
 		if err != nil {
 			return fmt.Errorf("error getting absolute path of data directory")
 		}
@@ -88,7 +88,7 @@ cache file in the user cache directory.`,
 		queries := models.New(db)
 		// @TODO context
 		ctx := context.Background()
-		err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "data-dir", Value: dataDir})
+		err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "data-dir", Value: dataPath})
 		if err != nil {
 			return fmt.Errorf("error setting data path: %w", err)
 		}
@@ -113,7 +113,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("error getting home directory: %v", err)
 	}
-	initCmd.Flags().StringP("data-dir", "a", filepath.Join(homeDir, "trackit-data"),
+	initCmd.Flags().StringP("data-path", "a", filepath.Join(homeDir, "trackit-data"),
 		"Specify the desired path to the directory holding the downloaded CSVs.")
 	initCmd.Flags().StringP("db-path", "d", filepath.Join(homeDir, "trackit.db"),
 		"Specify the desired path to the trackit.db (sqlite) database file, including the name of the file")
