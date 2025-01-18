@@ -61,7 +61,7 @@ accounts:
         table: amount
 ```
 
-By default the config file should be at `~/trackit.yaml`, but you can customize that in the `--config-file` flag
+By default the `trackit.yaml` file should be at `~/trackit.yaml`, but you can customize that in the `--config-file` flag
 to `trackit init`.
 
 After running `trackit init` (see above), run `trackit import`. Now you can list transactions (`trackit list`), search (`trackit search`)
