@@ -24,18 +24,10 @@ var lsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
+
 		db, err := getDB()
 		if err != nil {
 			return err
-		}
-		transactions, total, err := getAccountTransactions(db, account, date)
-		if err != nil {
-			return fmt.Errorf("error getting transactions: %w", err)
-		}
-
-		err = renderTransactionTable(transactions, total)
-		if err != nil {
-			return fmt.Errorf("error rendering transactions: %w", err)
 		}
 		if date != "" {
 			_, err := time.Parse("2006-01", date)
@@ -57,6 +49,15 @@ var lsCmd = &cobra.Command{
 			if !ok {
 				return fmt.Errorf("invalid account specified: %s. Check your config for valid account keys", account)
 			}
+		}
+		transactions, total, err := getAccountTransactions(db, account, date)
+		if err != nil {
+			return fmt.Errorf("error getting transactions: %w", err)
+		}
+
+		err = renderTransactionTable(transactions, total)
+		if err != nil {
+			return fmt.Errorf("error rendering transactions: %w", err)
 		}
 		return nil
 	},
