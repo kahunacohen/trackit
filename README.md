@@ -1,12 +1,16 @@
 # trackit
 `trackit` is a cross-platform, light-weight CLI (command-line-interface) personal finance tracking tool. It's
-meant for power-users (programmer types) who prefer working on the command-line over GUIs.
+meant for power-users (programmer types) who prefer working on the command-line over GUIs. It is mainly
+for tracking transactions across accounts on a monthly basis.
+
+Its main method of ingesting transaction records is by parsing and importing CSV files downloaded from your
+bank accounts into an embedded, file-based [sqlite](https://sqlite.org/) database.
 
 ## Features
 - [x] **Cost**: free.
 - [x] **Cross-platform**: MacOS, Windows, Ubantu.
 - [x] **Entirely offline**: no internet connection needed, and thus, no inherent privacy concerns.
-- [x] **Multi-device**: leverages file-based [sqlite](https://sqlite.org/) database, so you are in charge of how
+- [x] **Multi-device**: leverages file-based database, so you are in charge of how
    (or if you even want to) sync the `*.db` file across multiple devices.
 - [x] **Flexible**: you can write custom queries against the auto-generated `*.db` sqlite file.
 - [x] **Performance**: It's all file-based and written in GO with embedded sqlite.
@@ -18,7 +22,7 @@ meant for power-users (programmer types) who prefer working on the command-line 
 ## Getting started
 1. [Download](https://github.com/kahunacohen/trackit/releases/) the correct version of trackit for your operating system
 1. Put the `trackit` executable in your path.
-1. By default, the data directory will be at `~/trackit-data`, but you can change that with the `--data-path` flag to
+1. The data directory (from which it imports CSV files from) is at `~/trackit-data`, but you can change that with the `--data-path` flag to
    `trackit init`.
 1. Add date directories and CSV files. For example, create directory `~/trackit-data/2024-10` and download a month's transaction CSV file
    from your bank account for that month to that directory. Rename the CSV file after the name of your account (e.g. `bank_of_america.csv`). You should now have a file at: `~/trackit-data/2024-10/bank_of_america.csv`. Put other accounts' transaction CSV files for that month
