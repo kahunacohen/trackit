@@ -71,7 +71,7 @@ etc. Run `trackit -h` for more options.
 You can manually add transactions (e.g. cash transactions) with `trackit add`. See `trackit add -h` for more.
 
 ## Multi-currency
-trackit supports multi-currency. Add a base_currency key in `trackit.yaml` and set the appropriate currency code
+trackit supports multi-currency. Add a `base_currency` key in `trackit.yaml` and set the appropriate currency code
 for each account. E.g.
 
 ```yaml
