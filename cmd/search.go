@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kahunacohen/trackit/internal/config"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/spf13/cobra"
 )
@@ -27,6 +28,28 @@ trackit search <text>`,
 			return err
 		}
 		queries := models.New(db)
+		if date != "" {
+			if date != "" {
+				_, err := time.Parse("2006-01", date)
+				if err != nil {
+					return fmt.Errorf("date must be in YYYY-MM format")
+				}
+			}
+		}
+		if account != "" {
+			configPath, err := queries.ReadSettingByName(context.Background(), "config-file")
+			if err != nil {
+				return fmt.Errorf("error getting config-file path from db: %w", err)
+			}
+			conf, err := config.ParseConfig(configPath)
+			if err != nil {
+				return fmt.Errorf("error parsing config: %v", err)
+			}
+			_, ok := conf.Accounts[account]
+			if !ok {
+				return fmt.Errorf("invalid account specified: %s. Check your config for valid account keys", account)
+			}
+		}
 		var transactions []models.TransactionsView
 		var total float64
 
@@ -53,12 +76,6 @@ trackit search <text>`,
 				})
 			}
 		} else if date != "" && account == "" {
-			if date != "" {
-				_, err := time.Parse("2006-01", date)
-				if err != nil {
-					return fmt.Errorf("date must be in YYYY-MM format")
-				}
-			}
 			ts, err := queries.SearchTransactionsByDateWithSum(context.Background(), models.SearchTransactionsByDateWithSumParams{
 				SearchTerm: sql.NullString{Valid: true, String: args[0]},
 				Date:       date,
@@ -90,9 +107,10 @@ trackit search <text>`,
 					return fmt.Errorf("date must be in YYYY-MM format")
 				}
 			}
-			ts, err := queries.SearchTransactionsByDateWithSum(context.Background(), models.SearchTransactionsByDateWithSumParams{
-				SearchTerm: sql.NullString{Valid: true, String: args[0]},
-				Date:       date,
+			ts, err := queries.SearchTransactionsByAccountNameAndDateWithSum(context.Background(), models.SearchTransactionsByAccountNameAndDateWithSumParams{
+				SearchTerm:  sql.NullString{Valid: true, String: args[0]},
+				AccountName: sql.NullString{Valid: true, String: account},
+				Date:        date,
 			})
 
 			if len(ts) > 0 {

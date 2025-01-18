@@ -45,3 +45,6 @@ SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE count
 
 -- name: SearchTransactionsByDateWithSum :many
 SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%' AND strftime('%Y-%m', "date") = ? ORDER BY "date" DESC;
+
+-- name: SearchTransactionsByAccountNameAndDateWithSum :many
+SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%' AND account_name=? AND strftime('%Y-%m', "date") = ? ORDER BY "date" DESC;
