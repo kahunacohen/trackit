@@ -42,3 +42,6 @@ SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(CASE WHEN 
 
 -- name: SearchTransactionsWithSum :many
 SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%' ORDER BY "date" DESC;
+
+-- name: SearchTransactionsByDateWithSum :many
+SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%' AND strftime('%Y-%m', "date") = ? ORDER BY "date" DESC;
