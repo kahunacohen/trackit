@@ -123,6 +123,10 @@ exchange_rates:
     to: ILS
     rate: 3.75
 ```
+## Separate deposit/withdrawl fields
+Some downloaded CSV transaction rows have an amount field that is positive (deposits) or negative (withdrawls). Other
+CSV downloads will have separate columns for deposits and withdrawls. `trackit` has an `amount` table for the former case
+and `deposit`/`withdrawl` tables for the latter case.
 
 ## Aggregating
 You can aggregate transactions and get monthly reports by category using `trackit aggregate`. Currently
