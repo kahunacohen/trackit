@@ -104,7 +104,9 @@ accounts:
         table: counter_party
       - name: reference
         table: ~
-      - name: withdrawl
+      # if the CSV file has separate withdrawl fields and deposit fields (instead of one amount field),
+      # then map them to deposit/withdrawl table instead of one amount table.
+      - name: withdrawl 
         table: withdrawl
       - name: deposit
         table: deposit
