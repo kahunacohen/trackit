@@ -91,10 +91,19 @@ LEFT JOIN
 LEFT JOIN 
     categories ON transactions.category_id = categories.id;
 
+CREATE TABLE IF NOT EXISTS currency_codes (
+    id INTEGER PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    CHECK (LENGTH(symbol) = 2)
+);
+
 CREATE TABLE IF NOT EXISTS rates (
+    id INTEGER PRIMARY KEY,
     rate NUMERIC NOT NULL,
-    currency_from_id INTEGER NOT NULL,
-    currency_to_id INTEGER NOT NULL,
-    "month" TEXT NOT NULL
+    currency_code_from_id INTEGER NOT NULL,
+    currency_code_to_id INTEGER NOT NULL,
+    "month" TEXT NOT NULL,
+    FOREIGN KEY (currency_code_from_id) REFERENCES currency_codes(id) ON DELETE CASCADE,
+    FOREIGN KEY (currency_code_to_id) REFERENCES currency_codes(id) ON DELETE CASCADE,
     CHECK (month LIKE '____-__' AND substr(month, 1, 4) BETWEEN '0000' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12')
 );
