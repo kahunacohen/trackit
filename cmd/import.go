@@ -10,6 +10,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -73,6 +74,102 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	if err != nil {
 		return fmt.Errorf("error getting absolute path for data directory: %w", err)
 	}
+	err = filepath.Walk(dataPath, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if strings.ToLower(filepath.Ext(path)) == ".csv" {
+			fileName := filepath.Base(path)
+			validFileName := validateFileName(fileName, conf)
+			if !validFileName {
+				return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", path)
+			}
+			file, err := os.Open(path)
+			if err != nil {
+				return fmt.Errorf("error opening %s: %w", path, err)
+			}
+			defer file.Close()
+			tx, err := db.Begin()
+			if err != nil {
+				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
+			}
+			fileHash, err := computeFileHash(file)
+			if err != nil {
+				return fmt.Errorf("problem hashing file: %w", err)
+			}
+			fmt.Println(tx)
+			// Check if file has been modified
+			var isFileHashInDB bool = true
+			hashFromDb, err := queries.ReadHashFromFileName(ctx, path)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					// The file never had a hash and has never been seen before.
+					log.Printf("file %s has never been processed, insert hash to db\n", path)
+					if err := queries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
+						return fmt.Errorf("error inserting initial file hash: %w", err)
+					}
+
+					// File should be processed if hash not in db at all.
+					isFileHashInDB = false
+				} else {
+					// Some other error trying to get hash.
+					return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
+				}
+			}
+			if isFileHashInDB || fileHash == hashFromDb {
+				log.Printf("file %s has not changed, skip processing\n", path)
+				return nil
+			}
+			log.Printf("processing file %s\n", path)
+			reader := csv.NewReader(file)
+			records, err := reader.ReadAll()
+
+			if err != nil {
+				return fmt.Errorf("error reading %s: %w", path, err)
+			}
+			if len(records) < 2 {
+				return fmt.Errorf("there are less than 2 rows for file: %s", path)
+			}
+			headersInFile := records[0]
+			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
+			accountFromConf := conf.Accounts[bankAccountNameFromFile]
+			fmt.Println("!!headersInFile", headersInFile)
+			fmt.Println("!!accountFromConf", accountFromConf)
+			dataRows := records[1:]
+			if len(dataRows) == 0 {
+				return fmt.Errorf("file %s has no records", path)
+			}
+			headersInConfig := conf.Headers(bankAccountNameFromFile)
+			dateLayout := accountFromConf.DateLayout
+			colIndices := accountsToColIndices[bankAccountNameFromFile]
+			bankAccountCurrency := accountFromConf.Currency
+			var exchangeRateConfig ExchangeRatesWrapper
+			var exchangeRateNum *float64
+			if bankAccountCurrency != conf.BaseCurrency {
+				rateFilePath := filepath.Join(monthPath, "rates.yaml")
+				rateFileData, err := os.ReadFile(rateFilePath)
+				if err != nil {
+					return fmt.Errorf("could not get a conversion rate from a rates.yaml file at %s. Error: %w", rateFilePath, err)
+				}
+				if err := yaml.Unmarshal(rateFileData, &exchangeRateConfig); err != nil {
+					return fmt.Errorf("error parsing rate file: %w", err)
+				}
+				for _, rate := range exchangeRateConfig.ExchangeRates {
+					if rate.From == bankAccountCurrency {
+						exchangeRateNum = &rate.Rate
+					}
+				}
+			}
+
+			// aaron
+
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("error walking %s: %w", dataPath, err)
+	}
+
 	dateEntries, err := os.ReadDir(dataPath)
 	if err != nil {
 		return err
