@@ -105,5 +105,6 @@ CREATE TABLE IF NOT EXISTS rates (
     "month" TEXT NOT NULL,
     FOREIGN KEY (currency_code_from_id) REFERENCES currency_codes(id) ON DELETE CASCADE,
     FOREIGN KEY (currency_code_to_id) REFERENCES currency_codes(id) ON DELETE CASCADE,
-    CHECK (month LIKE '____-__' AND substr(month, 1, 4) BETWEEN '0000' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12')
+    CHECK (month LIKE '____-__' AND substr(month, 1, 4) BETWEEN '0000' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12'),
+    UNIQUE (month, currency_code_from_id, currency_code_to_id)
 );
