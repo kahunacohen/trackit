@@ -19,8 +19,10 @@ VALUES (
 DELETE FROM rates WHERE id=?;
 
 -- name: UpdateRate :exec
--- UPDATE rates SET rate=?, from=(), to=(), month=?
-
--- UPDATE school
--- SET course = 'mysqli', teacher = 'Tanzania', student = 'you'
--- WHERE id = 6
+UPDATE 
+    rates 
+SET 
+    rate=?,
+    currency_code_from_id=(SELECT currency_codes.id FROM currency_codes WHERE currency_codes.symbol = sqlc.arg(fromSymbol)),
+    currency_code_to_id=(SELECT currency_codes.id FROM currency_codes WHERE currency_codes.symbol = sqlc.arg(toSymbol)),
+    month=?;
