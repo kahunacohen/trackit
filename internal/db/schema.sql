@@ -97,7 +97,19 @@ CREATE TABLE IF NOT EXISTS currency_codes (
     CHECK (LENGTH(symbol) = 3)
 );
 
-INSERT OR IGNORE INTO currency_codes VALUES ("name") ("USD");
+INSERT OR IGNORE INTO currency_codes (symbol) VALUES
+    ('AUD'),
+    ('CAD'),
+    ('CHF'),
+    ('CNY'),
+    ('EUR'),
+    ('GBP'),
+    ('HKD'),
+    ('ILS'),
+    ('JPY'),
+    ('NZD'),
+    ('USD');
+
 
 CREATE TABLE IF NOT EXISTS rates (
     id INTEGER PRIMARY KEY,
