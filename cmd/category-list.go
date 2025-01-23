@@ -14,11 +14,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listCmd represents the list command
-var listCmd = &cobra.Command{
+var categoryListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "lists existing categories",
-	Long:  `lists existing categories. trackit categories list`,
+	Long:  `lists existing categories. trackit category list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		db, err := getDB()
 		if err != nil {
@@ -43,5 +42,5 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
-	categoriesCmd.AddCommand(listCmd)
+	categoryCmd.AddCommand(categoryListCmd)
 }

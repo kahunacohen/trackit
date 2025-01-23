@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var deleteCmd = &cobra.Command{
+var categoryDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Args:  cobra.ExactArgs(1),
 	Short: "Deletes a category. delete <id>",
@@ -39,5 +39,5 @@ id by doing trackit categories list`,
 }
 
 func init() {
-	categoriesCmd.AddCommand(deleteCmd)
+	categoryCmd.AddCommand(categoryDeleteCmd)
 }

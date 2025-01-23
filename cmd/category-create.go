@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var categoriesCreateCmd = &cobra.Command{
+var categoryCreateCmd = &cobra.Command{
 	Use:   "create",
 	Args:  cobra.ExactArgs(1),
 	Short: "Creates a category. categories add <name>",
@@ -33,5 +33,5 @@ var categoriesCreateCmd = &cobra.Command{
 }
 
 func init() {
-	categoriesCmd.AddCommand(categoriesCreateCmd)
+	categoryCmd.AddCommand(categoryCreateCmd)
 }

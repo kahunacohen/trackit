@@ -9,9 +9,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// categoriesCmd represents the categories command
-var categoriesCmd = &cobra.Command{
-	Use:   "categories",
+// categoryCmd represents the categories command
+var categoryCmd = &cobra.Command{
+	Use:   "category",
 	Short: "Root command for managing categories",
 	Long:  `Root command for managing categories, including list, create, update, delete`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -20,5 +20,5 @@ var categoriesCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(categoriesCmd)
+	rootCmd.AddCommand(categoryCmd)
 }
