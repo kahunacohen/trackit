@@ -94,8 +94,10 @@ LEFT JOIN
 CREATE TABLE IF NOT EXISTS currency_codes (
     id INTEGER PRIMARY KEY,
     symbol TEXT NOT NULL,
-    CHECK (LENGTH(symbol) = 2)
+    CHECK (LENGTH(symbol) = 3)
 );
+
+INSERT OR IGNORE INTO currency_codes VALUES ("name") ("USD");
 
 CREATE TABLE IF NOT EXISTS rates (
     id INTEGER PRIMARY KEY,
