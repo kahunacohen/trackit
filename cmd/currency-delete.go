@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// currencyDeleteCmd represents the currencyDelete command
 var currencyDeleteCmd = &cobra.Command{
 	Use:   "delete",
 	Args:  cobra.ExactArgs(1),

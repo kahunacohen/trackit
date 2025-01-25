@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/models"
@@ -77,22 +78,11 @@ func renderTransactionTable(rows []models.TransactionsView, total *float64) erro
 	return nil
 }
 
-func validateDateDirectoryFormat(name string) bool {
-	split := strings.Split(name, "-")
-	if len(split) != 2 {
-		return false
-	}
-	month := split[1]
-	m, err := strconv.Atoi(month)
-	if err != nil {
-		return false
-	}
-	if m < 1 || m > 12 {
-		return false
-	}
-	year := split[0]
-	return len(year) == 4
+func validateYearMonthFormat(s string) bool {
+	_, err := time.Parse("2006-01", s)
+	return err == nil
 }
+
 func validateDateWithDayFormat(name string) bool {
 	split := strings.Split(name, "-")
 	if len(split) != 3 {

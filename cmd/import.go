@@ -175,7 +175,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	}
 	for _, dateEntry := range dateEntries {
 		dateName := dateEntry.Name()
-		validName := validateDateDirectoryFormat(dateName)
+		validName := validateYearMonthFormat(dateName)
 		if !validName {
 			log.Printf("skipping directory '%s'. Not a valid month directory in the form YYYY-mm", dateName)
 			continue
