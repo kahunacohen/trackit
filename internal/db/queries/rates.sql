@@ -7,7 +7,18 @@ SELECT
     to_currency.symbol AS to_currency_symbol
 FROM rates
 INNER JOIN currency_codes AS from_currency ON from_currency.id = rates.currency_code_from_id
-INNER JOIN currency_codes AS to_currency ON to_currency.id = rates.currency_code_to_id;
+INNER JOIN currency_codes AS to_currency ON to_currency.id = rates.currency_code_to_id ORDER BY rates.month;
+
+-- name: ReadRatesByMonth :many
+SELECT 
+    rates.id, 
+    rates.rate,
+    rates.month, 
+    from_currency.symbol AS from_currency_symbol,
+    to_currency.symbol AS to_currency_symbol
+FROM rates
+INNER JOIN currency_codes AS from_currency ON from_currency.id = rates.currency_code_from_id
+INNER JOIN currency_codes AS to_currency ON to_currency.id = rates.currency_code_to_id WHERE rates.month=? ORDER BY rates.month;
 
 
 -- name: ReadRateFromSymbols :one

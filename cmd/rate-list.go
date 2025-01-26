@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -18,15 +19,30 @@ var rateListCmd = &cobra.Command{
 	Short: "Lists the conversion rates",
 	Long:  `Lists the the conversion rates. trackit rate list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		month, _ := cmd.Flags().GetString("month")
 		db, err := getDB()
 		if err != nil {
 			return err
 		}
 		ctx := context.Background()
 		queries := models.New(db)
-		rates, err := queries.ReadAllRates(ctx)
-		if err != nil {
-			return fmt.Errorf("error reading rates: %w", err)
+		var rates []models.ReadAllRatesRow
+		if month == "" {
+			rates, err = queries.ReadAllRates(ctx)
+			if err != nil {
+				return fmt.Errorf("error reading rates: %w", err)
+			}
+		} else {
+			if !validateYearMonthFormat(month) {
+				return errors.New("error parsing month parameter. Should be in format YYYY-MM")
+			}
+			ratesByMonth, err := queries.ReadRatesByMonth(ctx, month)
+			if err != nil {
+				return fmt.Errorf("error reading rates by month: %w", err)
+			}
+			for _, r := range ratesByMonth {
+				rates = append(rates, models.ReadAllRatesRow(r))
+			}
 		}
 		t := table.NewWriter()
 		t.SetStyle(table.StyleLight)
@@ -42,5 +58,6 @@ var rateListCmd = &cobra.Command{
 }
 
 func init() {
+	rateListCmd.Flags().StringP("month", "m", "", "month in YYYY-MM format for the rate")
 	rateCmd.AddCommand(rateListCmd)
 }
