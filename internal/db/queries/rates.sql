@@ -8,12 +8,7 @@ WHERE from_currency.symbol =  sqlc.arg(fromSymbol) AND to_currency.symbol =  sql
 
 -- name: CreateRate :exec
 INSERT INTO rates (rate, currency_code_from_id, currency_code_to_id, "month")
-VALUES (
-    ?,
-    (SELECT id FROM currency_codes WHERE currency_codes.symbol = sqlc.arg(fromSymbol)),
-    (SELECT id FROM currency_codes WHERE currency_codes.symbol = sqlc.arg(toSymbol)),
-    ?
-);
+    VALUES (?, ?, ?, ?);
 
 -- name: DeleteRate :exec
 DELETE FROM rates WHERE id=?;

@@ -38,16 +38,16 @@ var rateCreateCmd = &cobra.Command{
 		}
 		var fromSymbolFound bool
 		var toSymbolFound bool
-		// var fromCurrencyID int64
-		// var toCurrencyID int64
+		var fromCurrencyID int64
+		var toCurrencyID int64
 		for _, curr := range currencies {
 			if fromSymbol == curr.Symbol {
 				fromSymbolFound = true
-				// fromCurrencyID = curr.ID
+				fromCurrencyID = curr.ID
 			}
 			if toSymbol == curr.Symbol {
 				toSymbolFound = true
-				// toCurrencyID = curr.ID
+				toCurrencyID = curr.ID
 			}
 		}
 		if !fromSymbolFound {
@@ -60,10 +60,10 @@ var rateCreateCmd = &cobra.Command{
 			return fmt.Errorf("month param \"%s\" must be in form YYYY-MM", month)
 		}
 		err = queries.CreateRate(ctx, models.CreateRateParams{
-			Rate:       rate,
-			Fromsymbol: fromSymbol,
-			Tosymbol:   toSymbol,
-			Month:      month})
+			Rate:               rate,
+			CurrencyCodeFromID: fromCurrencyID,
+			CurrencyCodeToID:   toCurrencyID,
+			Month:              month})
 		if err != nil {
 			return fmt.Errorf("error creating rate: %w", err)
 		}
