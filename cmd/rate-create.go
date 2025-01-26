@@ -17,12 +17,13 @@ var rateCreateCmd = &cobra.Command{
 	Short: "creates a rate for a given month",
 	Long:  `creates a rate for a given month`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		monthParam, _ := cmd.Flags().GetString("month")
-		if !validateYearMonthFormat(monthParam) {
-			return fmt.Errorf("month param  \"%s\" is not valid month format (YYYY-MM)", monthParam)
+		month, _ := cmd.Flags().GetString("month")
+		if !validateYearMonthFormat(month) {
+			return fmt.Errorf("month param  \"%s\" is not valid month format (YYYY-MM)", month)
 		}
 		fromSymbol, _ := cmd.Flags().GetString("from-symbol")
 		toSymbol, _ := cmd.Flags().GetString("to-symbol")
+		rate, _ := cmd.Flags().GetFloat64("rate")
 		fromSymbol = strings.ToUpper(fromSymbol)
 		toSymbol = strings.ToUpper(toSymbol)
 		db, err := getDB()
@@ -37,12 +38,16 @@ var rateCreateCmd = &cobra.Command{
 		}
 		var fromSymbolFound bool
 		var toSymbolFound bool
+		// var fromCurrencyID int64
+		// var toCurrencyID int64
 		for _, curr := range currencies {
 			if fromSymbol == curr.Symbol {
 				fromSymbolFound = true
+				// fromCurrencyID = curr.ID
 			}
 			if toSymbol == curr.Symbol {
 				toSymbolFound = true
+				// toCurrencyID = curr.ID
 			}
 		}
 		if !fromSymbolFound {
@@ -51,8 +56,16 @@ var rateCreateCmd = &cobra.Command{
 		if !toSymbolFound {
 			return fmt.Errorf("toSymbol \"%s\" not found. You must create it first with trackit currency create", toSymbol)
 		}
-		if !validateYearMonthFormat(monthParam) {
-			return fmt.Errorf("month param \"%s\" must be in form YYYY-MM", monthParam)
+		if !validateYearMonthFormat(month) {
+			return fmt.Errorf("month param \"%s\" must be in form YYYY-MM", month)
+		}
+		err = queries.CreateRate(ctx, models.CreateRateParams{
+			Rate:       rate,
+			Fromsymbol: fromSymbol,
+			Tosymbol:   toSymbol,
+			Month:      month})
+		if err != nil {
+			return fmt.Errorf("error creating rate: %w", err)
 		}
 		return nil
 	},
