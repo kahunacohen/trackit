@@ -26,7 +26,7 @@ var currencyListCmd = &cobra.Command{
 		}
 		ctx := context.Background()
 		queries := models.New(db)
-		symbols, err := queries.ReadCurrencyCodes(ctx)
+		currencies, err := queries.ReadAllCurrencies(ctx)
 		if err != nil {
 			return fmt.Errorf("error reading currency codes: %w", err)
 		}
@@ -34,8 +34,8 @@ var currencyListCmd = &cobra.Command{
 		t.SetStyle(table.StyleLight)
 		t.SetOutputMirror(os.Stdout)
 		t.AppendHeader(table.Row{"ID", "Name"})
-		for _, symbol := range symbols {
-			t.AppendRow([]interface{}{symbol.ID, symbol.Symbol})
+		for _, currency := range currencies {
+			t.AppendRow([]interface{}{currency.ID, currency.Symbol})
 		}
 		t.Render()
 		return nil
