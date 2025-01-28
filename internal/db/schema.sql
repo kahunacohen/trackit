@@ -93,7 +93,7 @@ LEFT JOIN
 
 CREATE TABLE IF NOT EXISTS currency_codes (
     id INTEGER PRIMARY KEY,
-    symbol TEXT NOT NULL,
+    symbol TEXT NOT NULL UNIQUE,
     CHECK (LENGTH(symbol) = 3)
 );
 
