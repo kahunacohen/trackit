@@ -178,7 +178,6 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					if !ok {
 						rate, err = queries.ReadRateFromSymbols(ctx, models.ReadRateFromSymbolsParams{
 							Fromsymbol: bankAccountCurrency,
-							Tosymbol:   conf.BaseCurrency,
 							Month:      normalizedTransactionDate})
 						if err != nil {
 							fmt.Println(normalizedTransactionDate)

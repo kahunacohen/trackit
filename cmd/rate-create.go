@@ -39,7 +39,6 @@ var rateCreateCmd = &cobra.Command{
 		var fromSymbolFound bool
 		var toSymbolFound bool
 		var fromCurrencyID int64
-		var toCurrencyID int64
 		for _, curr := range currencies {
 			if fromSymbol == curr.Symbol {
 				fromSymbolFound = true
@@ -47,7 +46,6 @@ var rateCreateCmd = &cobra.Command{
 			}
 			if toSymbol == curr.Symbol {
 				toSymbolFound = true
-				toCurrencyID = curr.ID
 			}
 		}
 		if !fromSymbolFound {
@@ -62,7 +60,6 @@ var rateCreateCmd = &cobra.Command{
 		err = queries.CreateRate(ctx, models.CreateRateParams{
 			Rate:               rate,
 			CurrencyCodeFromID: fromCurrencyID,
-			CurrencyCodeToID:   toCurrencyID,
 			Month:              month})
 		if err != nil {
 			return fmt.Errorf("error creating rate: %w", err)

@@ -47,9 +47,9 @@ var rateListCmd = &cobra.Command{
 		t := table.NewWriter()
 		t.SetStyle(table.StyleLight)
 		t.SetOutputMirror(os.Stdout)
-		t.AppendHeader(table.Row{"ID", "Month", "From", "To", "Rate"})
+		t.AppendHeader(table.Row{"ID", "Month", "From", "Rate"})
 		for _, rate := range rates {
-			t.AppendRow([]interface{}{rate.ID, rate.Month, rate.FromCurrencySymbol, rate.ToCurrencySymbol, rate.Rate})
+			t.AppendRow([]interface{}{rate.ID, rate.Month, rate.FromCurrencySymbol, rate.Rate})
 		}
 		t.Render()
 		return nil
