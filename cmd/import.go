@@ -57,6 +57,14 @@ func init() {
 	rootCmd.AddCommand(importCmd)
 }
 
+type rateCacheKey struct {
+	Date       string
+	ToCurrency string
+}
+
+// cache of months to rates
+var exchangeRateCache = make(map[rateCacheKey]float64)
+
 func processFiles(conf *config.Config, db *sql.DB) error {
 	// First create a map of account name to db table names to indices
 	// like: {bank_of_america: {date: 0}} etc.
@@ -73,8 +81,6 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 		return fmt.Errorf("error getting absolute path for data directory: %w", err)
 	}
 
-	// cache of months to rates
-	exchangeRateCache := make(map[string]float64)
 	fmt.Println(exchangeRateCache)
 	err = filepath.Walk(dataPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -166,12 +172,22 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
 				}
 				if mustConvert {
-					normalizedTransactionDate := date.Format("01-2006")
-					rate, ok := exchangeRateCache[normalizedTransactionDate]
+					normalizedTransactionDate := date.Format("2006-01")
+					cacheKey := rateCacheKey{Date: normalizedTransactionDate, ToCurrency: bankAccountCurrency}
+					rate, ok := exchangeRateCache[cacheKey]
 					if !ok {
-						queries.ReadRatesByMonth(ctx, normalizedTransactionDate)
+						rate, err = queries.ReadRateFromSymbols(ctx, models.ReadRateFromSymbolsParams{
+							Fromsymbol: bankAccountCurrency,
+							Tosymbol:   conf.BaseCurrency,
+							Month:      normalizedTransactionDate})
+						if err != nil {
+							fmt.Println(normalizedTransactionDate)
+							return fmt.Errorf("error reading rate %s to %s for month %s from DB: %w", bankAccountCurrency, conf.BaseCurrency, normalizedTransactionDate, err)
+						}
+						exchangeRateCache[cacheKey] = rate
+
 					}
-					fmt.Println(rate)
+					fmt.Println("rate", rate)
 					//queries.ReadRatesByMonth(ctx, rowDateStr)
 				}
 				fmt.Println(date)
