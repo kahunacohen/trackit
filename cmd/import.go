@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -62,13 +63,9 @@ type rateCacheKey struct {
 	ToCurrency string
 }
 
-// cache of months to rates
 var exchangeRateCache = make(map[rateCacheKey]float64)
 
 func processFiles(conf *config.Config, db *sql.DB) error {
-	// First create a map of account name to db table names to indices
-	// like: {bank_of_america: {date: 0}} etc.
-	// so we can know each bank account's csv structure.
 	queries := models.New(db)
 	ctx := context.Background()
 	accountsToColIndices := conf.ColIndices()
@@ -80,8 +77,6 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	if err != nil {
 		return fmt.Errorf("error getting absolute path for data directory: %w", err)
 	}
-
-	fmt.Println(exchangeRateCache)
 	err = filepath.Walk(dataPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -105,7 +100,6 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			if err != nil {
 				return fmt.Errorf("problem hashing file: %w", err)
 			}
-			fmt.Println(tx)
 			// Check if file has been modified
 			var isFileHashInDB bool = true
 			hashFromDb, err := queries.ReadHashFromFileName(ctx, path)
@@ -141,8 +135,6 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			headersInFile := records[0]
 			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
 			accountFromConf := conf.Accounts[bankAccountNameFromFile]
-			fmt.Println("!!headersInFile", headersInFile)
-			fmt.Println("!!accountFromConf", accountFromConf)
 			dataRows := records[1:]
 			if len(dataRows) == 0 {
 				return fmt.Errorf("file %s has no records", path)
@@ -150,20 +142,12 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			headersInConfig := conf.Headers(bankAccountNameFromFile)
 			dateLayout := accountFromConf.DateLayout
 			colIndices := accountsToColIndices[bankAccountNameFromFile]
-			fmt.Println(headersInConfig)
-			fmt.Println(dateLayout)
-			fmt.Println(colIndices)
 			bankAccountCurrency := accountFromConf.Currency
-			// var exchangeRateConfig ExchangeRatesWrapper
-			var exchangeRateNum *float64
-			fmt.Println(exchangeRateNum)
-			var mustConvert bool
-			if bankAccountCurrency != conf.BaseCurrency {
-				fmt.Println("!!!!!!must convert", bankAccountNameFromFile)
-				mustConvert = true
+			for _, headerInConfig := range headersInConfig {
+				if !slices.Contains(headersInFile, headerInConfig) {
+					return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, path)
+				}
 			}
-			fmt.Println(headersInFile)
-			fmt.Println(mustConvert)
 
 			for _, row := range dataRows {
 				rowDateStr := row[colIndices["transaction_date"]]
@@ -171,7 +155,45 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				if err != nil {
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
 				}
-				if mustConvert {
+				var amount float64
+				thousandsSeparator := accountFromConf.ThousandsSeparator
+				depositIndx, depositIndxExists := colIndices["deposit"]
+				withdrawlIndx, withdrawlIndxExists := colIndices["withdrawl"]
+				amountIndx, amountIndxExists := colIndices["amount"]
+				if amountIndxExists {
+					amountStr := row[amountIndx]
+					parsedAmount, err := parseAmount(amountStr, thousandsSeparator)
+					if err != nil {
+						return fmt.Errorf("error parsing amount: %s", amountStr)
+					}
+					if parsedAmount == nil {
+						return fmt.Errorf("parsed amount is nil in: %s", path)
+					}
+					amount = *parsedAmount
+				} else {
+					if !depositIndxExists || !withdrawlIndxExists {
+						return fmt.Errorf("must define a withdrawl and deposit column for: %s", path)
+					}
+					depositStr := row[depositIndx]
+					parsedDeposit, err := parseAmount(depositStr, thousandsSeparator)
+					if err != nil {
+						return fmt.Errorf("error parsing deposit amount %s in %s", depositStr, path)
+					}
+					withdrawlStr := row[withdrawlIndx]
+					parsedWithdrawl, err := parseAmount(withdrawlStr, thousandsSeparator)
+					if err != nil {
+						return fmt.Errorf("error parsing withdrawl amount %s in %s", withdrawlStr, path)
+					}
+					if parsedDeposit == nil {
+						return fmt.Errorf("parsed deposit is null in %s", path)
+					}
+					if parsedWithdrawl == nil {
+						return fmt.Errorf("parsed withrawl is null in %s", path)
+
+					}
+					amount = *parsedDeposit - *parsedWithdrawl
+				}
+				if bankAccountCurrency != conf.BaseCurrency {
 					normalizedTransactionDate := date.Format("2006-01")
 					cacheKey := rateCacheKey{Date: normalizedTransactionDate, ToCurrency: bankAccountCurrency}
 					rate, ok := exchangeRateCache[cacheKey]
@@ -180,233 +202,63 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 							Fromsymbol: bankAccountCurrency,
 							Month:      normalizedTransactionDate})
 						if err != nil {
-							fmt.Println(normalizedTransactionDate)
-							return fmt.Errorf("error reading rate %s to %s for month %s from DB: %w", bankAccountCurrency, conf.BaseCurrency, normalizedTransactionDate, err)
+							if err == sql.ErrNoRows {
+								return fmt.Errorf(`no rate defined from %s to %s for month: %s, file: %s Create curency
+(trackit currency create) and rate (trackit rate create) to define a conversion rate for this month`, bankAccountCurrency, conf.BaseCurrency, normalizedTransactionDate, path)
+							} else {
+								return fmt.Errorf("error reading rate %s to %s for month %s from DB: %w", bankAccountCurrency, conf.BaseCurrency, normalizedTransactionDate, err)
+							}
 						}
 						exchangeRateCache[cacheKey] = rate
 
 					}
-					fmt.Println("rate", rate)
-					//queries.ReadRatesByMonth(ctx, rowDateStr)
+					targetAmount := amount * rate
+					roundedAmount := roundAmount(targetAmount)
+					amount = roundedAmount
 				}
-				fmt.Println(date)
+
+				counterParty := row[colIndices["counter_party"]]
+				bankAccountId, err := queries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
+				if err != nil {
+					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
+				}
+				categoryName, err := getCategory(conf, counterParty)
+				if err != nil {
+					return err
+				}
+				var categoryId int64
+				if categoryName != nil {
+					categoryId, err = queries.ReadCategoryIdByName(ctx, *categoryName)
+					if err != nil {
+						return fmt.Errorf("error getting category ID: %w", err)
+					}
+				}
+				err = queries.CreateTransaction(ctx, models.CreateTransactionParams{
+					AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
+					Date:         date.Format("2006-01-02"),
+					Amount:       amount,
+					CounterParty: counterParty,
+					CategoryID:   toNullInt64(&categoryId)})
+				if err != nil {
+					tx.Rollback()
+					return fmt.Errorf("error inserting transaction: %w", err)
+				}
+			} // end iteration of data rows in file
+			err = queries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: path})
+			if err != nil {
+				tx.Rollback()
+				return fmt.Errorf("error updating file hash for file: %s: %w", path, err)
 			}
-
-			// aaron
-
-		}
+			err = tx.Commit()
+			if err != nil {
+				return fmt.Errorf("error committing transactions to database: %w", err)
+			}
+		} // end if csv
 		return nil
-	})
+	}) // end of walk
 	if err != nil {
-		return fmt.Errorf("error walking %s: %w", dataPath, err)
+		return err
 	}
-
-	// dateEntries, err := os.ReadDir(dataPath)
-	// if err != nil {
-	// 	return err
-	// }
-	// for _, dateEntry := range dateEntries {
-	// 	dateName := dateEntry.Name()
-	// 	validName := validateYearMonthFormat(dateName)
-	// 	if !validName {
-	// 		log.Printf("skipping directory '%s'. Not a valid month directory in the form YYYY-mm", dateName)
-	// 		continue
-	// 	}
-	// 	monthPath := filepath.Join(dataPath, dateName)
-	// 	fileEntries, err := os.ReadDir(monthPath)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	if len(fileEntries) == 0 {
-	// 		return fmt.Errorf("month directory '%s' contains no CSV files", dateName)
-	// 	}
-	// 	for _, fileEntry := range fileEntries {
-	// 		fileName := fileEntry.Name()
-	// 		if fileName == "rates.yaml" || fileName == "rates.yml" {
-	// 			continue
-	// 		}
-	// 		validFileName := validateFileName(fileName, conf)
-	// 		if !validFileName {
-	// 			return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", fileName)
-	// 		}
-	// 		filePath := filepath.Join(monthPath, fileName)
-	// 		file, err := os.Open(filePath)
-	// 		if err != nil {
-	// 			return fmt.Errorf("error opening %s: %w", filePath, err)
-	// 		}
-	// 		defer file.Close()
-
-	// 		tx, err := db.Begin()
-	// 		if err != nil {
-	// 			return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
-	// 		}
-	// 		fileHash, err := computeFileHash(file)
-	// 		if err != nil {
-	// 			return fmt.Errorf("problem hashing file: %w", err)
-	// 		}
-
-	// 		// Check if file has been modified
-	// 		var isFileHashInDB bool = true
-	// 		hashFromDb, err := queries.ReadHashFromFileName(ctx, filePath)
-	// 		if err != nil {
-	// 			if err == sql.ErrNoRows {
-	// 				// The file never had a hash and has never been seen before.
-	// 				log.Printf("file %s has never been processed, insert hash to db\n", filePath)
-	// 				if err := queries.CreateFile(ctx, models.CreateFileParams{Name: filePath, Hash: fileHash}); err != nil {
-	// 					return fmt.Errorf("error inserting initial file hash: %w", err)
-	// 				}
-
-	// 				// File should be processed if hash not in db at all.
-	// 				isFileHashInDB = false
-	// 			} else {
-	// 				// Some other error trying to get hash.
-	// 				return fmt.Errorf("error looking up hash from db for %s: %v", filePath, err)
-	// 			}
-	// 		}
-	// 		if isFileHashInDB || fileHash == hashFromDb {
-	// 			log.Printf("file %s has not changed, skip processing\n", filePath)
-	// 			continue
-	// 		}
-	// 		log.Printf("processing file %s\n", filePath)
-	// 		reader := csv.NewReader(file)
-	// 		records, err := reader.ReadAll()
-
-	// 		if err != nil {
-	// 			return fmt.Errorf("error reading %s: %w", filePath, err)
-	// 		}
-	// 		if len(records) < 2 {
-	// 			return fmt.Errorf("there are less than 2 rows for file: %s", fileName)
-	// 		}
-	// 		headersInFile := records[0]
-	// 		bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
-	// 		accountFromConf := conf.Accounts[bankAccountNameFromFile]
-	// 		dataRows := records[1:]
-	// 		if len(dataRows) == 0 {
-	// 			return fmt.Errorf("file %s has no records", filePath)
-	// 		}
-	// 		headersInConfig := conf.Headers(bankAccountNameFromFile)
-	// 		dateLayout := accountFromConf.DateLayout
-	// 		colIndices := accountsToColIndices[bankAccountNameFromFile]
-	// 		bankAccountCurrency := accountFromConf.Currency
-	// 		var exchangeRateConfig ExchangeRatesWrapper
-	// 		var exchangeRateNum *float64
-	// 		if bankAccountCurrency != conf.BaseCurrency {
-	// 			rateFilePath := filepath.Join(monthPath, "rates.yaml")
-	// 			rateFileData, err := os.ReadFile(rateFilePath)
-	// 			if err != nil {
-	// 				return fmt.Errorf("could not get a conversion rate from a rates.yaml file at %s. Error: %w", rateFilePath, err)
-	// 			}
-	// 			if err := yaml.Unmarshal(rateFileData, &exchangeRateConfig); err != nil {
-	// 				return fmt.Errorf("error parsing rate file: %w", err)
-	// 			}
-	// 			for _, rate := range exchangeRateConfig.ExchangeRates {
-	// 				if rate.From == bankAccountCurrency {
-	// 					exchangeRateNum = &rate.Rate
-	// 				}
-	// 			}
-	// 		}
-
-	// 		// check if headers config at least all exist in file headers. It could
-	// 		// be that there are headers in the file that don't exist in config and
-	// 		// and that's ok.
-	// 		for _, headerInConfig := range headersInConfig {
-	// 			if !slices.Contains(headersInFile, headerInConfig) {
-	// 				return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, filePath)
-	// 			}
-	// 		}
-
-	// 		for _, row := range dataRows {
-	// courtney
-	// 			date, err := time.Parse(dateLayout, row[colIndices["transaction_date"]])
-	// 			if err != nil {
-	// 				return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
-	// 			}
-	// 			if err != nil {
-	// 				return fmt.Errorf("error parsing date %s: %v", date, err)
-	// 			}
-	// 			var amount float64
-	// 			thousandsSeparator := accountFromConf.ThousandsSeparator
-	// 			depositIndx, depositIndxExists := colIndices["deposit"]
-	// 			withdrawlIndx, withdrawlIndxExists := colIndices["withdrawl"]
-	// 			amountIndx, amountIndxExists := colIndices["amount"]
-	// 			if amountIndxExists {
-	// 				amountStr := row[amountIndx]
-	// 				parsedAmount, err := parseAmount(amountStr, thousandsSeparator)
-	// 				if err != nil {
-	// 					return fmt.Errorf("error parsing amount: %s", amountStr)
-	// 				}
-	// 				if parsedAmount == nil {
-	// 					return fmt.Errorf("parsed amount is nil in: %s", filePath)
-	// 				}
-	// 				amount = *parsedAmount
-	// 			} else {
-	// 				if !depositIndxExists || !withdrawlIndxExists {
-	// 					return fmt.Errorf("must define a withdrawl and deposit column for: %s", filePath)
-	// 				}
-	// 				depositStr := row[depositIndx]
-	// 				parsedDeposit, err := parseAmount(depositStr, thousandsSeparator)
-	// 				if err != nil {
-	// 					return fmt.Errorf("error parsing deposit amount %s in %s", depositStr, filePath)
-	// 				}
-	// 				withdrawlStr := row[withdrawlIndx]
-	// 				parsedWithdrawl, err := parseAmount(withdrawlStr, thousandsSeparator)
-	// 				if err != nil {
-	// 					return fmt.Errorf("error parsing withdrawl amount %s in %s", withdrawlStr, filePath)
-	// 				}
-	// 				if parsedDeposit == nil {
-	// 					return fmt.Errorf("parsed deposit is null in %s", filePath)
-	// 				}
-	// 				if parsedWithdrawl == nil {
-	// 					return fmt.Errorf("parsed withrawl is null in %s", filePath)
-
-	// 				}
-	// 				amount = *parsedDeposit - *parsedWithdrawl
-
-	// 			}
-	// 			if exchangeRateNum != nil {
-	// 				targetAmount := amount * *exchangeRateNum
-	// 				roundedAmount := roundAmount(targetAmount)
-	// 				amount = roundedAmount
-	// 			}
-	// 			counterParty := row[colIndices["counter_party"]]
-	// 			bankAccountId, err := queries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
-	// 			if err != nil {
-	// 				return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
-	// 			}
-	// 			categoryName, err := getCategory(conf, counterParty)
-	// 			if err != nil {
-	// 				return err
-	// 			}
-	// 			var categoryId int64
-	// 			if categoryName != nil {
-	// 				categoryId, err = queries.ReadCategoryIdByName(ctx, *categoryName)
-	// 				if err != nil {
-	// 					return fmt.Errorf("error getting category ID: %w", err)
-	// 				}
-	// 			}
-	// 			err = queries.CreateTransaction(ctx, models.CreateTransactionParams{
-	// 				AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
-	// 				Date:         date.Format("2006-01-02"),
-	// 				Amount:       amount,
-	// 				CounterParty: counterParty,
-	// 				CategoryID:   toNullInt64(&categoryId)})
-	// 			if err != nil {
-	// 				tx.Rollback()
-	// 				return fmt.Errorf("error inserting transaction: %w", err)
-	// 			}
-	// 		}
-	// 		err = queries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: filePath})
-	// 		if err != nil {
-	// 			tx.Rollback()
-	// 			return fmt.Errorf("error updating file hash for file: %s: %w", filePath, err)
-	// 		}
-	// 		err = tx.Commit()
-	// 		if err != nil {
-	// 			return fmt.Errorf("error committing transactions to database: %w", err)
-	// 		}
-	// 	}
-
-	// }
 	return nil
 }
 

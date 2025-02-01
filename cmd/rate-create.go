@@ -22,10 +22,8 @@ var rateCreateCmd = &cobra.Command{
 			return fmt.Errorf("month param  \"%s\" is not valid month format (YYYY-MM)", month)
 		}
 		fromSymbol, _ := cmd.Flags().GetString("from-symbol")
-		toSymbol, _ := cmd.Flags().GetString("to-symbol")
 		rate, _ := cmd.Flags().GetFloat64("rate")
 		fromSymbol = strings.ToUpper(fromSymbol)
-		toSymbol = strings.ToUpper(toSymbol)
 		db, err := getDB()
 		if err != nil {
 			return err
@@ -37,22 +35,15 @@ var rateCreateCmd = &cobra.Command{
 			return fmt.Errorf("error reading currencies: %w", err)
 		}
 		var fromSymbolFound bool
-		var toSymbolFound bool
 		var fromCurrencyID int64
 		for _, curr := range currencies {
 			if fromSymbol == curr.Symbol {
 				fromSymbolFound = true
 				fromCurrencyID = curr.ID
 			}
-			if toSymbol == curr.Symbol {
-				toSymbolFound = true
-			}
 		}
 		if !fromSymbolFound {
 			return fmt.Errorf("fromSymbol \"%s\" not found. You must create it first with trackit currency create", fromSymbol)
-		}
-		if !toSymbolFound {
-			return fmt.Errorf("toSymbol \"%s\" not found. You must create it first with trackit currency create", toSymbol)
 		}
 		if !validateYearMonthFormat(month) {
 			return fmt.Errorf("month param \"%s\" must be in form YYYY-MM", month)
@@ -73,8 +64,6 @@ func init() {
 	rateCreateCmd.MarkFlagRequired("month")
 	rateCreateCmd.Flags().StringP("from-symbol", "f", "", "from currency symbol")
 	rateCreateCmd.MarkFlagRequired("from-symbol")
-	rateCreateCmd.Flags().StringP("to-symbol", "t", "", "to currency symbol")
-	rateCreateCmd.MarkFlagRequired("to-symbol")
 	rateCreateCmd.Flags().Float64P("rate", "r", 1, "rate")
 	rateCreateCmd.MarkFlagRequired("rate")
 	rateCmd.AddCommand(rateCreateCmd)
