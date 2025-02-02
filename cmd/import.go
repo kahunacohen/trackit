@@ -77,6 +77,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	if err != nil {
 		return fmt.Errorf("error getting absolute path for data directory: %w", err)
 	}
+	log.Printf("walking file path: %s\n", dataPath)
 	err = filepath.Walk(dataPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -87,11 +88,13 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			if !validFileName {
 				return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", path)
 			}
+			log.Printf("found CSV file: %s", path)
 			file, err := os.Open(path)
 			if err != nil {
 				return fmt.Errorf("error opening %s: %w", path, err)
 			}
 			defer file.Close()
+			log.Println("beginning transaction")
 			tx, err := db.Begin()
 			if err != nil {
 				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
@@ -101,28 +104,20 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("problem hashing file: %w", err)
 			}
 			// Check if file has been modified
-			var isFileHashInDB bool = true
+			// hashFromDb will be empty string if there is none.
 			hashFromDb, err := queries.ReadHashFromFileName(ctx, path)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					// The file never had a hash and has never been seen before.
-					log.Printf("file %s has never been processed, insert hash to db\n", path)
-					if err := queries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
-						return fmt.Errorf("error inserting initial file hash: %w", err)
-					}
-
-					// File should be processed if hash not in db at all.
-					isFileHashInDB = false
-				} else {
-					// Some other error trying to get hash.
-					return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
-				}
+			if err != sql.ErrNoRows {
+				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
+				// The file never had a hash and has never been seen before.
+				// log.Printf("file %s has never been processed, insert hash to db\n", path)
+				// if err := queries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
+				// 	return fmt.Errorf("error inserting initial file hash: %w", err)
+				// }
 			}
-			if isFileHashInDB || fileHash == hashFromDb {
+			if fileHash == hashFromDb {
 				log.Printf("file %s has not changed, skip processing\n", path)
 				return nil
 			}
-			log.Printf("processing file %s\n", path)
 			reader := csv.NewReader(file)
 			records, err := reader.ReadAll()
 
@@ -148,7 +143,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, path)
 				}
 			}
-
+			log.Printf("iterating data rows for file: %s\n", path)
 			for _, row := range dataRows {
 				rowDateStr := row[colIndices["transaction_date"]]
 				date, err := time.Parse(dateLayout, rowDateStr)
@@ -194,6 +189,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					amount = *parsedDeposit - *parsedWithdrawl
 				}
 				if bankAccountCurrency != conf.BaseCurrency {
+					log.Printf("account currency is %s, must convert to base currency\n", bankAccountCurrency)
 					normalizedTransactionDate := date.Format("2006-01")
 					cacheKey := rateCacheKey{Date: normalizedTransactionDate, ToCurrency: bankAccountCurrency}
 					rate, ok := exchangeRateCache[cacheKey]
@@ -210,8 +206,8 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 							}
 						}
 						exchangeRateCache[cacheKey] = rate
-
 					}
+					log.Printf("converting amount %f by %f rate\n", amount, rate)
 					targetAmount := amount * rate
 					roundedAmount := roundAmount(targetAmount)
 					amount = roundedAmount
@@ -233,6 +229,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
+				log.Println("creating transaction")
 				err = queries.CreateTransaction(ctx, models.CreateTransactionParams{
 					AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
 					Date:         date.Format("2006-01-02"),
@@ -244,11 +241,20 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("error inserting transaction: %w", err)
 				}
 			} // end iteration of data rows in file
-			err = queries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: path})
-			if err != nil {
-				tx.Rollback()
-				return fmt.Errorf("error updating file hash for file: %s: %w", path, err)
+			if hashFromDb == "" {
+				log.Printf("file %s had never been processed, insert hash to db\n", path)
+				if err := queries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
+					return fmt.Errorf("error inserting initial file hash: %w", err)
+				}
+			} else {
+				log.Printf("file %s changed, update hash\n", path)
+				err = queries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: path})
+				if err != nil {
+					tx.Rollback()
+					return fmt.Errorf("error updating file hash for file: %s: %w", path, err)
+				}
 			}
+			log.Println("commit db transaction")
 			err = tx.Commit()
 			if err != nil {
 				return fmt.Errorf("error committing transactions to database: %w", err)
