@@ -119,3 +119,7 @@ CREATE TABLE IF NOT EXISTS rates (
     FOREIGN KEY (currency_code_from_id) REFERENCES currency_codes(id) ON DELETE CASCADE,
     CHECK (month LIKE '____-__' AND substr(month, 1, 4) BETWEEN '0000' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12')
 );
+INSERT OR IGNORE INTO rates (rate, currency_code_from_id, "month") VALUES
+    (3.75, 11, '2024-09'),
+    (3.75, 11, '2024-10'),
+    (3.75, 11, '2024-11');
