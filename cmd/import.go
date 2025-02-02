@@ -101,23 +101,18 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("problem hashing file: %w", err)
 			}
 			// Check if file has been modified
-			var isFileHashInDB bool = true
+			var isFileHashInDB bool
 			hashFromDb, err := queries.ReadHashFromFileName(ctx, path)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					// The file never had a hash and has never been seen before.
-					log.Printf("file %s has never been processed, insert hash to db\n", path)
-					if err := queries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
-						return fmt.Errorf("error inserting initial file hash: %w", err)
-					}
 
-					// File should be processed if hash not in db at all.
-					isFileHashInDB = false
-				} else {
-					// Some other error trying to get hash.
-					return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
-				}
+			// Only report error if its an error other than no rows, since no rows
+			// is expected if the file has no entry.
+			if err != nil && err != sql.ErrNoRows {
+				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
 			}
+			if err == nil || err != sql.ErrNoRows {
+				isFileHashInDB = true
+			}
+
 			if isFileHashInDB || fileHash == hashFromDb {
 				log.Printf("file %s has not changed, skip processing\n", path)
 				return nil
@@ -253,6 +248,13 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			if err != nil {
 				return fmt.Errorf("error committing transactions to database: %w", err)
 			}
+			if !isFileHashInDB {
+				log.Printf("file %s has never been processed, insert hash to db\n", path)
+				if err := queries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
+					return fmt.Errorf("error inserting file hash: %w", err)
+				}
+			}
+
 		} // end if csv
 		return nil
 	}) // end of walk
