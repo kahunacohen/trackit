@@ -66,10 +66,10 @@ type rateCacheKey struct {
 var exchangeRateCache = make(map[rateCacheKey]float64)
 
 func processFiles(conf *config.Config, db *sql.DB) error {
-	queries := models.New(db)
+	dbQueries := models.New(db)
 	ctx := context.Background()
 	accountsToColIndices := conf.ColIndices()
-	dataPath, err := queries.ReadSettingByName(ctx, "data-dir")
+	dataPath, err := dbQueries.ReadSettingByName(ctx, "data-dir")
 	if err != nil {
 		return fmt.Errorf("error getting data path setting: %w", err)
 	}
@@ -99,20 +99,16 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			if err != nil {
 				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
 			}
+			txQueries := models.New(tx)
 			fileHash, err := computeFileHash(file)
 			if err != nil {
 				return fmt.Errorf("problem hashing file: %w", err)
 			}
 			// Check if file has been modified
 			// hashFromDb will be empty string if there is none.
-			hashFromDb, err := queries.ReadHashFromFileName(ctx, path)
+			hashFromDb, err := dbQueries.ReadHashFromFileName(ctx, path)
 			if err != sql.ErrNoRows {
 				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
-				// The file never had a hash and has never been seen before.
-				// log.Printf("file %s has never been processed, insert hash to db\n", path)
-				// if err := queries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
-				// 	return fmt.Errorf("error inserting initial file hash: %w", err)
-				// }
 			}
 			if fileHash == hashFromDb {
 				log.Printf("file %s has not changed, skip processing\n", path)
@@ -143,7 +139,6 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, path)
 				}
 			}
-			log.Printf("iterating data rows for file: %s\n", path)
 			for _, row := range dataRows {
 				rowDateStr := row[colIndices["transaction_date"]]
 				date, err := time.Parse(dateLayout, rowDateStr)
@@ -189,12 +184,11 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					amount = *parsedDeposit - *parsedWithdrawl
 				}
 				if bankAccountCurrency != conf.BaseCurrency {
-					log.Printf("account currency is %s, must convert to base currency\n", bankAccountCurrency)
 					normalizedTransactionDate := date.Format("2006-01")
 					cacheKey := rateCacheKey{Date: normalizedTransactionDate, ToCurrency: bankAccountCurrency}
 					rate, ok := exchangeRateCache[cacheKey]
 					if !ok {
-						rate, err = queries.ReadRateFromSymbols(ctx, models.ReadRateFromSymbolsParams{
+						rate, err = dbQueries.ReadRateFromSymbols(ctx, models.ReadRateFromSymbolsParams{
 							Fromsymbol: bankAccountCurrency,
 							Month:      normalizedTransactionDate})
 						if err != nil {
@@ -207,48 +201,47 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 						}
 						exchangeRateCache[cacheKey] = rate
 					}
-					log.Printf("converting amount %f by %f rate\n", amount, rate)
 					targetAmount := amount * rate
 					roundedAmount := roundAmount(targetAmount)
 					amount = roundedAmount
 				}
 
 				counterParty := row[colIndices["counter_party"]]
-				bankAccountId, err := queries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
+				bankAccountId, err := dbQueries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
 				if err != nil {
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
 				categoryName, err := getCategory(conf, counterParty)
 				if err != nil {
-					return err
+					return fmt.Errorf("error getting category: %w", err)
 				}
 				var categoryId int64
 				if categoryName != nil {
-					categoryId, err = queries.ReadCategoryIdByName(ctx, *categoryName)
+					categoryId, err = dbQueries.ReadCategoryIdByName(ctx, *categoryName)
 					if err != nil {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
-				log.Println("creating transaction")
-				err = queries.CreateTransaction(ctx, models.CreateTransactionParams{
+				log.Printf("inserting transaction for %f\n", amount)
+				err = txQueries.CreateTransaction(ctx, models.CreateTransactionParams{
 					AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
 					Date:         date.Format("2006-01-02"),
 					Amount:       amount,
 					CounterParty: counterParty,
 					CategoryID:   toNullInt64(&categoryId)})
 				if err != nil {
-					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)
 				}
 			} // end iteration of data rows in file
 			if hashFromDb == "" {
 				log.Printf("file %s had never been processed, insert hash to db\n", path)
-				if err := queries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
+				if err := dbQueries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
+					tx.Rollback()
 					return fmt.Errorf("error inserting initial file hash: %w", err)
 				}
 			} else {
 				log.Printf("file %s changed, update hash\n", path)
-				err = queries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: path})
+				err = txQueries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: path})
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error updating file hash for file: %s: %w", path, err)
