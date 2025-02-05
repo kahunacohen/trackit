@@ -106,7 +106,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			}
 			// Check if file has been modified
 			// hashFromDb will be empty string if there is none.
-			hashFromDb, err := dbQueries.ReadHashFromFileName(ctx, path)
+			hashFromDb, err := txQueries.ReadHashFromFileName(ctx, path)
 			if err != sql.ErrNoRows {
 				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
 			}
@@ -188,7 +188,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					cacheKey := rateCacheKey{Date: normalizedTransactionDate, ToCurrency: bankAccountCurrency}
 					rate, ok := exchangeRateCache[cacheKey]
 					if !ok {
-						rate, err = dbQueries.ReadRateFromSymbols(ctx, models.ReadRateFromSymbolsParams{
+						rate, err = txQueries.ReadRateFromSymbols(ctx, models.ReadRateFromSymbolsParams{
 							Fromsymbol: bankAccountCurrency,
 							Month:      normalizedTransactionDate})
 						if err != nil {
@@ -207,7 +207,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				}
 
 				counterParty := row[colIndices["counter_party"]]
-				bankAccountId, err := dbQueries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
+				bankAccountId, err := txQueries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
 				if err != nil {
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
@@ -217,7 +217,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				}
 				var categoryId int64
 				if categoryName != nil {
-					categoryId, err = dbQueries.ReadCategoryIdByName(ctx, *categoryName)
+					categoryId, err = txQueries.ReadCategoryIdByName(ctx, *categoryName)
 					if err != nil {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
@@ -235,7 +235,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			} // end iteration of data rows in file
 			if hashFromDb == "" {
 				log.Printf("file %s had never been processed, insert hash to db\n", path)
-				if err := dbQueries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
+				if err := txQueries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting initial file hash: %w", err)
 				}
