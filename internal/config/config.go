@@ -32,11 +32,10 @@ func ParseConfig(path string) (*Config, error) {
 	return &config, nil
 }
 
-// Returns a map of this form:
+// Returns a map keyed by account name whose value is another map, mapping table
+// name to the position in the slice of headers. E.g.:
 // {accountName: {"transaction_date": 0, "counter_party": 3, "amount": 4}}
-// This dymamically tells us for each account what column index in the CSV file maps to what
-// database table.
-func (c *Config) ColIndices() map[string]map[string]int {
+func (c *Config) AccountColumnIndices() map[string]map[string]int {
 	accountToColIndices := make(map[string]map[string]int)
 	for accountName, account := range c.Accounts {
 		colIndexMap := make(map[string]int)

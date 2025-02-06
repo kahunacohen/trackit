@@ -68,10 +68,10 @@ var exchangeRateCache = make(map[rateCacheKey]float64)
 func processFiles(conf *config.Config, db *sql.DB) error {
 	dbQueries := models.New(db)
 	ctx := context.Background()
-	accountsToColIndices := conf.ColIndices()
+	accountsToColIndices := conf.AccountColumnIndices()
 	dataPath, err := dbQueries.ReadSettingByName(ctx, "data-dir")
 	if err != nil {
-		return fmt.Errorf("error getting data path setting: %w", err)
+		return fmt.Errorf("error getting data directory: %w", err)
 	}
 	dataPath, err = filepath.Abs(dataPath)
 	if err != nil {
@@ -84,8 +84,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 		}
 		if strings.ToLower(filepath.Ext(path)) == ".csv" {
 			fileName := filepath.Base(path)
-			validFileName := validateFileName(fileName, conf)
-			if !validFileName {
+			if !validateFileName(fileName, conf) {
 				return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", path)
 			}
 			log.Printf("found CSV file: %s", path)
@@ -93,34 +92,38 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			if err != nil {
 				return fmt.Errorf("error opening %s: %w", path, err)
 			}
-			defer file.Close()
 			log.Println("beginning transaction")
-			tx, err := db.Begin()
-			if err != nil {
-				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
-			}
-			txQueries := models.New(tx)
+
 			fileHash, err := computeFileHash(file)
 			if err != nil {
 				return fmt.Errorf("problem hashing file: %w", err)
 			}
 			// Check if file has been modified
 			// hashFromDb will be empty string if there is none.
+			tx, err := db.Begin()
+			if err != nil {
+				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
+			}
+			txQueries := models.New(tx)
 			hashFromDb, err := txQueries.ReadHashFromFileName(ctx, path)
 			if err != nil && err != sql.ErrNoRows {
+				tx.Rollback()
 				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
 			}
 			if fileHash == hashFromDb {
 				log.Printf("file %s has not changed, skip processing\n", path)
+				tx.Rollback()
 				return nil
 			}
 			reader := csv.NewReader(file)
 			records, err := reader.ReadAll()
-
 			if err != nil {
+				tx.Rollback()
 				return fmt.Errorf("error reading %s: %w", path, err)
 			}
+			file.Close()
 			if len(records) < 2 {
+				tx.Rollback()
 				return fmt.Errorf("there are less than 2 rows for file: %s", path)
 			}
 			headersInFile := records[0]
@@ -128,6 +131,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			accountFromConf := conf.Accounts[bankAccountNameFromFile]
 			dataRows := records[1:]
 			if len(dataRows) == 0 {
+				tx.Rollback()
 				return fmt.Errorf("file %s has no records", path)
 			}
 			headersInConfig := conf.Headers(bankAccountNameFromFile)
@@ -136,6 +140,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			bankAccountCurrency := accountFromConf.Currency
 			for _, headerInConfig := range headersInConfig {
 				if !slices.Contains(headersInFile, headerInConfig) {
+					tx.Rollback()
 					return fmt.Errorf("header '%s' in file: '%s' is not a valid header for this account: Check trackit.yaml", headerInConfig, path)
 				}
 			}
@@ -143,6 +148,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				rowDateStr := row[colIndices["transaction_date"]]
 				date, err := time.Parse(dateLayout, rowDateStr)
 				if err != nil {
+					tx.Rollback()
 					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
 				}
 				var amount float64
@@ -154,30 +160,37 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					amountStr := row[amountIndx]
 					parsedAmount, err := parseAmount(amountStr, thousandsSeparator)
 					if err != nil {
+						tx.Rollback()
 						return fmt.Errorf("error parsing amount: %s", amountStr)
 					}
 					if parsedAmount == nil {
+						tx.Rollback()
 						return fmt.Errorf("parsed amount is nil in: %s", path)
 					}
 					amount = *parsedAmount
 				} else {
 					if !depositIndxExists || !withdrawlIndxExists {
+						tx.Rollback()
 						return fmt.Errorf("must define a withdrawl and deposit column for: %s", path)
 					}
 					depositStr := row[depositIndx]
 					parsedDeposit, err := parseAmount(depositStr, thousandsSeparator)
 					if err != nil {
+						tx.Rollback()
 						return fmt.Errorf("error parsing deposit amount %s in %s", depositStr, path)
 					}
 					withdrawlStr := row[withdrawlIndx]
 					parsedWithdrawl, err := parseAmount(withdrawlStr, thousandsSeparator)
 					if err != nil {
+						tx.Rollback()
 						return fmt.Errorf("error parsing withdrawl amount %s in %s", withdrawlStr, path)
 					}
 					if parsedDeposit == nil {
+						tx.Rollback()
 						return fmt.Errorf("parsed deposit is null in %s", path)
 					}
 					if parsedWithdrawl == nil {
+						tx.Rollback()
 						return fmt.Errorf("parsed withrawl is null in %s", path)
 
 					}
@@ -193,9 +206,11 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 							Month:      normalizedTransactionDate})
 						if err != nil {
 							if err == sql.ErrNoRows {
+								tx.Rollback()
 								return fmt.Errorf(`no rate defined from %s to %s for month: %s, file: %s Create curency
 (trackit currency create) and rate (trackit rate create) to define a conversion rate for this month`, bankAccountCurrency, conf.BaseCurrency, normalizedTransactionDate, path)
 							} else {
+								tx.Rollback()
 								return fmt.Errorf("error reading rate %s to %s for month %s from DB: %w", bankAccountCurrency, conf.BaseCurrency, normalizedTransactionDate, err)
 							}
 						}
@@ -209,16 +224,19 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				counterParty := row[colIndices["counter_party"]]
 				bankAccountId, err := txQueries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
 				if err != nil {
+					tx.Rollback()
 					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
 				}
 				categoryName, err := getCategory(conf, counterParty)
 				if err != nil {
+					tx.Rollback()
 					return fmt.Errorf("error getting category: %w", err)
 				}
 				var categoryId int64
 				if categoryName != nil {
 					categoryId, err = txQueries.ReadCategoryIdByName(ctx, *categoryName)
 					if err != nil {
+						tx.Rollback()
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
@@ -230,6 +248,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					CounterParty: counterParty,
 					CategoryID:   toNullInt64(&categoryId)})
 				if err != nil {
+					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)
 				}
 			} // end iteration of data rows in file
