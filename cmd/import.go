@@ -107,7 +107,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			// Check if file has been modified
 			// hashFromDb will be empty string if there is none.
 			hashFromDb, err := txQueries.ReadHashFromFileName(ctx, path)
-			if err != sql.ErrNoRows {
+			if err != nil && err != sql.ErrNoRows {
 				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
 			}
 			if fileHash == hashFromDb {
