@@ -25,12 +25,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var verbose bool
+
 var importCmd = &cobra.Command{
 	Use:   "import",
 	Short: "imports transactions",
 	Long: `imports transactions by parsing CSV files in the data directory. This will
 not parse files whose transactions that already have been added and will ignore non-CSV files.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		v, _ := cmd.Flags().GetBool("verbose")
+		verbose = v
 		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
@@ -77,7 +81,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	if err != nil {
 		return fmt.Errorf("error getting absolute path for data directory: %w", err)
 	}
-	log.Printf("walking file path: %s\n", dataPath)
+	logF("walking file path: %s\n", verbose, dataPath)
 	err = filepath.Walk(dataPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -87,19 +91,18 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			if !validateFileName(fileName, conf) {
 				return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", path)
 			}
-			log.Printf("found CSV file: %s", path)
+			logF("found CSV file: %s", verbose, path)
 			file, err := os.Open(path)
 			if err != nil {
 				return fmt.Errorf("error opening %s: %w", path, err)
 			}
-			log.Println("beginning transaction")
-
 			fileHash, err := computeFileHash(file)
 			if err != nil {
 				return fmt.Errorf("problem hashing file: %w", err)
 			}
-			// Check if file has been modified
-			// hashFromDb will be empty string if there is none.
+
+			logLn("begin transaction", verbose)
+
 			tx, err := db.Begin()
 			if err != nil {
 				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
@@ -111,7 +114,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
 			}
 			if fileHash == hashFromDb {
-				log.Printf("file %s has not changed, skip processing\n", path)
+				logF("file %s has not changed, skip processing\n", verbose, path)
 				tx.Rollback()
 				return nil
 			}
@@ -240,7 +243,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
-				log.Printf("inserting transaction for %f\n", amount)
+				logF("inserting transaction for %f\n", verbose, amount)
 				err = txQueries.CreateTransaction(ctx, models.CreateTransactionParams{
 					AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
 					Date:         date.Format("2006-01-02"),
@@ -253,20 +256,20 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				}
 			} // end iteration of data rows in file
 			if hashFromDb == "" {
-				log.Printf("file %s had never been processed, insert hash to db\n", path)
+				logF("file %s had never been processed, insert hash to db\n", verbose, path)
 				if err := txQueries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting initial file hash: %w", err)
 				}
 			} else {
-				log.Printf("file %s changed, update hash\n", path)
+				logF("file %s changed, update hash\n", verbose, path)
 				err = txQueries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: path})
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error updating file hash for file: %s: %w", path, err)
 				}
 			}
-			log.Println("commit db transaction")
+			logLn("commit db transaction", verbose)
 			err = tx.Commit()
 			if err != nil {
 				return fmt.Errorf("error committing transactions to database: %w", err)
