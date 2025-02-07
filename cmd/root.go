@@ -4,12 +4,12 @@ Copyright © 2024 Aaron Cohen <aaroncohendev@gmail.com>
 package cmd
 
 import (
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "trackit",
 	Short: "A CLI (command line application) for tracking personal finances",
@@ -28,5 +28,16 @@ func Execute() {
 }
 
 func init() {
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "verbose mode")
+}
 
+func logLn(msg string, verbose bool) {
+	if verbose {
+		log.Println(msg)
+	}
+}
+func logF(msg string, verbose bool, args ...interface{}) {
+	if verbose {
+		log.Printf(msg, args)
+	}
 }

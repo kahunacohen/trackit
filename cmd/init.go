@@ -27,6 +27,7 @@ var initCmd = &cobra.Command{
 the path to the config file in the database and caches the path to the database file in a
 cache file in the user cache directory.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		verbose, _ := cmd.Flags().GetBool("verbose")
 		dataPath, _ := cmd.Flags().GetString("data-path")
 		dataPath, err := filepath.Abs(dataPath)
 		if err != nil {
@@ -70,17 +71,18 @@ cache file in the user cache directory.`,
 		if err != nil {
 			return err
 		}
-		log.Println("parsed configuration file")
+
+		logLn("parsed configuration file", verbose)
 		db, err := getDB()
 		if err != nil {
 			return err
 		}
-		log.Println("created database")
+		logLn("created database", verbose)
 		defer db.Close()
 		if err = initSchema(db); err != nil {
 			return fmt.Errorf("error initializing database schema: %w", err)
 		}
-		log.Println("initialized schema")
+		logLn("initialized schema", verbose)
 		if err = initAccounts(conf, db); err != nil {
 			return fmt.Errorf("error initializing accounts: %w", err)
 		}
@@ -97,13 +99,13 @@ cache file in the user cache directory.`,
 		if err != nil {
 			return fmt.Errorf("error writing config-file path to db: %w", err)
 		}
-		log.Println("initialized accounts")
+		logLn("initialized accounts", verbose)
 
 		if err = initCategories(conf, db); err != nil {
 			return fmt.Errorf("error initializing categories: %w", err)
 		}
-		log.Println("initialized categories")
-		log.Println("succesfully completed initialization")
+		logLn("initialized categories", verbose)
+		logLn("succesfully completed initialization", verbose)
 		return nil
 	},
 }
