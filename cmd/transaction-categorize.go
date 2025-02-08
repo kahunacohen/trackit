@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var categorizeCmd = &cobra.Command{
+var transactionCategorizeCmd = &cobra.Command{
 	Use: "categorize",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
@@ -127,5 +127,5 @@ trackit categorize <id>`,
 }
 
 func init() {
-	rootCmd.AddCommand(categorizeCmd)
+	transactionCmd.AddCommand(transactionCategorizeCmd)
 }
