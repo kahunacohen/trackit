@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var searchCmd = &cobra.Command{
+var transactionSearchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Searches transactions' counter_party field for text. trackit search <text>",
 	Long: `Searches the transaction counter payer for text. Can filter by account and date. E.g.
@@ -139,7 +139,7 @@ trackit search <text>`,
 }
 
 func init() {
-	rootCmd.AddCommand(searchCmd)
-	searchCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
-	searchCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
+	transactionCmd.AddCommand(transactionSearchCmd)
+	transactionSearchCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
+	transactionSearchCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
 }
