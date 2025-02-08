@@ -115,9 +115,9 @@ func init() {
 	if err != nil {
 		log.Fatalf("error getting home directory: %v", err)
 	}
-	initCmd.Flags().StringP("data-path", "a", filepath.Join(homeDir, "trackit-data"),
+	initCmd.Flags().StringP("data-path", "d", filepath.Join(homeDir, "trackit-data"),
 		"Specify the desired path to the directory holding the downloaded CSVs.")
-	initCmd.Flags().StringP("db-path", "d", filepath.Join(homeDir, "trackit.db"),
+	initCmd.Flags().StringP("db-path", "p", filepath.Join(homeDir, "trackit.db"),
 		"Specify the desired path to the trackit.db (sqlite) database file, including the name of the file")
 	initCmd.Flags().StringP("config-file", "c", homeDir+"/trackit.yaml",
 		"Specify the path to the trackit.yaml config file, including the name of the file")

@@ -132,12 +132,14 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			headersInFile := records[0]
 			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
 			accountFromConf := conf.Accounts[bankAccountNameFromFile]
+			fmt.Println("account", bankAccountNameFromFile)
 			dataRows := records[1:]
 			if len(dataRows) == 0 {
 				tx.Rollback()
 				return fmt.Errorf("file %s has no records", path)
 			}
 			headersInConfig := conf.Headers(bankAccountNameFromFile)
+			fmt.Println(accountFromConf)
 			dateLayout := accountFromConf.DateLayout
 			colIndices := accountsToColIndices[bankAccountNameFromFile]
 			bankAccountCurrency := accountFromConf.Currency
@@ -149,6 +151,8 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			}
 			for _, row := range dataRows {
 				rowDateStr := row[colIndices["transaction_date"]]
+				fmt.Println("date", rowDateStr)
+				fmt.Printf("layout: '%s'\n", dateLayout)
 				date, err := time.Parse(dateLayout, rowDateStr)
 				if err != nil {
 					tx.Rollback()
@@ -285,7 +289,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 
 func validateFileName(fileName string, conf *config.Config) bool {
 	for accountName := range conf.Accounts {
-		if accountName+".csv" == fileName {
+		if strings.Contains(fileName, accountName) {
 			return true
 		}
 	}
