@@ -13,10 +13,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var addCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Adds a transaction",
-	Long: `With add, you can add a transaction that is not listed in
+var transactionCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "creates a transaction",
+	Long: `With create, you can create a transaction that is not listed in
 one of your CSV files. For example, say somebody gives you cash as a gift.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		flags := cmd.Flags()
@@ -76,12 +76,12 @@ one of your CSV files. For example, say somebody gives you cash as a gift.`,
 }
 
 func init() {
-	addCmd.Flags().StringP("account", "a", "", "account key")
-	addCmd.Flags().Float64P("amount", "m", 0, "amount of transaction")
-	addCmd.Flags().StringP("counter-party", "c", "", "other party participating in transaction")
-	addCmd.Flags().StringP("description", "d", "", "description of transaction")
-	addCmd.Flags().BoolP("ignore", "i", false, "whether to ignore amount when summing or aggregating")
-	addCmd.Flags().Int64P("category-id", "t", 0, "an existing category ID. Do trackit categories list to see existing categories.")
-	addCmd.Flags().StringP("date", "e", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
-	rootCmd.AddCommand(addCmd)
+	transactionCreateCmd.Flags().StringP("account", "a", "", "account key")
+	transactionCreateCmd.Flags().Float64P("amount", "m", 0, "amount of transaction")
+	transactionCreateCmd.Flags().StringP("counter-party", "c", "", "other party participating in transaction")
+	transactionCreateCmd.Flags().StringP("description", "d", "", "description of transaction")
+	transactionCreateCmd.Flags().BoolP("ignore", "i", false, "whether to ignore amount when summing or aggregating")
+	transactionCreateCmd.Flags().Int64P("category-id", "t", 0, "an existing category ID. Do trackit categories list to see existing categories.")
+	transactionCreateCmd.Flags().StringP("date", "e", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
+	transactionCmd.AddCommand(transactionCreateCmd)
 }

@@ -27,7 +27,7 @@ import (
 
 var verbose bool
 
-var importCmd = &cobra.Command{
+var transactionImportCmd = &cobra.Command{
 	Use:   "import",
 	Short: "imports transactions",
 	Long: `imports transactions by parsing CSV files in the data directory. This will
@@ -59,7 +59,7 @@ not parse files whose transactions that already have been added and will ignore 
 }
 
 func init() {
-	rootCmd.AddCommand(importCmd)
+	transactionCmd.AddCommand(transactionImportCmd)
 }
 
 type rateCacheKey struct {

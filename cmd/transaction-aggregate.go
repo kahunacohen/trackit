@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var aggregateCmd = &cobra.Command{
+var transactionAggregateCmd = &cobra.Command{
 	Use:   "aggregate",
 	Short: "Aggregates transactions by some facet, reporting total amount (default is category)",
 	Long: `Aggregates transactions by some facet (default is category): E.g.
@@ -46,10 +46,10 @@ $ trackit aggregate --by account
 }
 
 func init() {
-	aggregateCmd.Flags().StringP("account", "a", "", "account key from trackit.yaml to filter by account")
-	aggregateCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
-	aggregateCmd.Flags().StringP("by", "b", "category", "What to aggregate total by")
-	rootCmd.AddCommand(aggregateCmd)
+	transactionAggregateCmd.Flags().StringP("account", "a", "", "account key from trackit.yaml to filter by account")
+	transactionAggregateCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
+	transactionAggregateCmd.Flags().StringP("by", "b", "category", "What to aggregate total by")
+	transactionCmd.AddCommand(transactionAggregateCmd)
 }
 
 func getCategoryAggregation(db *sql.DB, account string, date string) ([]models.AggregateTransactionsRow, error) {

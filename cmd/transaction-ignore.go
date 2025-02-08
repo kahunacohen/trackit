@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var ignoreCmd = &cobra.Command{
+var transactionIgnoreCmd = &cobra.Command{
 	Use:   "ignore",
 	Short: "Marks a transaction by ID as ignored when summing",
 	Long: `Mark a specific transaction to ignore when summing or aggregating. To undo ignore,
@@ -52,7 +52,7 @@ var ids []int64
 var toggle bool
 
 func init() {
-	ignoreCmd.Flags().Int64SliceVar(&ids, "id", []int64{}, "Specify multiple IDs")
-	ignoreCmd.Flags().BoolVar(&toggle, "toggle", false, "Toggle whether a transaction should be ignored or not when summing. Must be supplied with the --id flag")
-	rootCmd.AddCommand(ignoreCmd)
+	transactionIgnoreCmd.Flags().Int64SliceVar(&ids, "id", []int64{}, "Specify multiple IDs")
+	transactionIgnoreCmd.Flags().BoolVar(&toggle, "toggle", false, "Toggle whether a transaction should be ignored or not when summing. Must be supplied with the --id flag")
+	transactionCmd.AddCommand(transactionIgnoreCmd)
 }

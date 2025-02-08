@@ -16,8 +16,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// lsCmd represents the view command
-var lsCmd = &cobra.Command{
+var transactionListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "Lists transactions",
 	Long:  `Lists transactions.`,
@@ -64,9 +63,9 @@ var lsCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(lsCmd)
-	lsCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
-	lsCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
+	transactionCmd.AddCommand(transactionListCmd)
+	transactionListCmd.Flags().StringP("date", "d", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
+	transactionListCmd.Flags().StringP("account", "a", "", "One of the account names in your trackit config file")
 }
 
 func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
