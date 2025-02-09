@@ -21,7 +21,8 @@ manage transactions if need be.
       sums/aggregations.
 
 ## Getting started
-1. [Download](https://github.com/kahunacohen/trackit/releases/) the correct version of trackit for your operating system
+1. [Download](https://github.com/kahunacohen/trackit/releases/) the correct version of trackit for your operating system (under `assets`).
+1. Unzip the zip file.
 1. Put the `trackit` executable in your path.
 1. The data directory (from which it imports CSV files from) is by default at `~/trackit-data`. Create that directory, if it doesn't exist.
    You can change the default data directory. See `trackit init -h`.
