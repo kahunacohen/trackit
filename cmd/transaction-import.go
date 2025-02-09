@@ -130,18 +130,20 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("there are less than 2 rows for file: %s", path)
 			}
 			headersInFile := records[0]
-			bankAccountNameFromFile := strings.Replace(fileName, ".csv", "", 1)
-			accountFromConf := conf.Accounts[bankAccountNameFromFile]
-			fmt.Println("account", bankAccountNameFromFile)
+			accountNameFromFilePtr := getAccountNameFromFileName(conf, fileName)
+			if accountNameFromFilePtr == nil {
+				return fmt.Errorf("no matching account name in trackit.yaml for file: '%s'", fileName)
+			}
+			accountNameFromFile := *accountNameFromFilePtr
+			accountFromConf := conf.Accounts[accountNameFromFile]
 			dataRows := records[1:]
 			if len(dataRows) == 0 {
 				tx.Rollback()
 				return fmt.Errorf("file %s has no records", path)
 			}
-			headersInConfig := conf.Headers(bankAccountNameFromFile)
-			fmt.Println(accountFromConf)
+			headersInConfig := conf.Headers(accountNameFromFile)
 			dateLayout := accountFromConf.DateLayout
-			colIndices := accountsToColIndices[bankAccountNameFromFile]
+			colIndices := accountsToColIndices[accountNameFromFile]
 			bankAccountCurrency := accountFromConf.Currency
 			for _, headerInConfig := range headersInConfig {
 				if !slices.Contains(headersInFile, headerInConfig) {
@@ -151,12 +153,10 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			}
 			for _, row := range dataRows {
 				rowDateStr := row[colIndices["transaction_date"]]
-				fmt.Println("date", rowDateStr)
-				fmt.Printf("layout: '%s'\n", dateLayout)
 				date, err := time.Parse(dateLayout, rowDateStr)
 				if err != nil {
 					tx.Rollback()
-					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], bankAccountNameFromFile)
+					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], accountNameFromFile)
 				}
 				var amount float64
 				thousandsSeparator := accountFromConf.ThousandsSeparator
@@ -229,10 +229,10 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				}
 
 				counterParty := row[colIndices["counter_party"]]
-				bankAccountId, err := txQueries.ReadAccountIdByName(ctx, bankAccountNameFromFile)
+				bankAccountId, err := txQueries.ReadAccountIdByName(ctx, accountNameFromFile)
 				if err != nil {
 					tx.Rollback()
-					return fmt.Errorf("error getting bank account ID for %s", bankAccountNameFromFile)
+					return fmt.Errorf("error getting bank account ID for %s", accountNameFromFile)
 				}
 				categoryName, err := getCategory(conf, counterParty)
 				if err != nil {
@@ -283,6 +283,15 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	}) // end of walk
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func getAccountNameFromFileName(conf *config.Config, fileName string) *string {
+	for k, _ := range conf.Accounts {
+		if strings.Contains(fileName, k) {
+			return &k
+		}
 	}
 	return nil
 }
