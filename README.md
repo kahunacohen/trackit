@@ -1,10 +1,11 @@
 # trackit
 `trackit` is a cross-platform, light-weight CLI (command-line-interface) personal finance tracking tool. It's
-meant for power-users (programmer types) who prefer working on the command-line over GUIs. It is mainly
-for tracking transactions across accounts on a monthly basis.
+meant for power-users (programmer types) who prefer working on the command-line over GUIs and prefer to avoid
+network traffic and/or handing over financial data.
 
 Its main method of ingesting transaction records is by parsing and importing CSV files downloaded from your
-bank accounts into an embedded, file-based [sqlite](https://sqlite.org/) database.
+bank accounts into an embedded, file-based [sqlite](https://sqlite.org/) database. It also allows you to manually
+manage transactions if need be.
 
 ## Features
 - [x] **Cost**: free.
@@ -12,23 +13,23 @@ bank accounts into an embedded, file-based [sqlite](https://sqlite.org/) databas
 - [x] **Entirely offline**: no internet connection needed, and thus, no inherent privacy concerns.
 - [x] **Multi-device**: leverages file-based database, so you are in charge of how
    (or if you even want to) sync the `*.db` file across multiple devices.
-- [x] **Flexible**: you can write custom queries against the auto-generated `*.db` sqlite file.
-- [x] **Performance**: It's all file-based and written in GO with embedded sqlite.
+- [x] **Flexible**: you can write custom queries against the auto-generated `trackit.db` sqlite file.
+- [x] **Performance**: It's all file-based and written in GO with embedded sqlite. It's fast.
 - [x] **Multi currency**: yes!
-- [x] **Categorization**: tag with built-in categories, or manage your own custom categories.
+- [x] **Categorization**: tag transactions with built-in categories, or manage your own custom categories.
 - [x] **Ignore selected transactions**: Mark certain transactions ignored (such as transfers), so they don't get included in
-      sums/aggregation.
+      sums/aggregations.
 
 ## Getting started
 1. [Download](https://github.com/kahunacohen/trackit/releases/) the correct version of trackit for your operating system
 1. Put the `trackit` executable in your path.
-1. The data directory (from which it imports CSV files from) is at `~/trackit-data`, but you can change that with the `--data-path` flag to
-   `trackit init`.
-1. Add date directories and CSV files. For example, create directory `~/trackit-data/2024-10` and download a month's transaction CSV file
-   from your bank account for that month to that directory. Rename the CSV file after the name of your account (e.g. `bank_of_america.csv`). You should now have a file at: `~/trackit-data/2024-10/bank_of_america.csv`. Put other accounts' transaction CSV files for that month
-   under that same directory.
-1. Create a `trackit.yaml` configuration file. Each account key in the `trackit.yaml` file should match the corresponding file name under each
-   month directory. In the `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
+1. The data directory (from which it imports CSV files from) is by default at `~/trackit-data`. Create that directory, if it doesn't exist.
+   You can change the default data directory. See `trackit init -h`.
+1. Download monthly transactions from your bank in CSV format and put them into your data directory. You can organize the files however you
+   like in that directory, **as long as the name of the file contains the bank account key** somewhere in the file name. The bank account key
+   is the name of the bank account with underscores that you set in the `trackit.yaml` file below.
+1. Create a `trackit.yaml` configuration file. By default it should go to `~/trackit.yaml`, but you can set a custom location. See `trackit init -h`.
+   In the `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
    
    * `transaction_date`
    * `counter_party`
@@ -61,11 +62,7 @@ accounts:
         table: amount
 ```
 
-By default the `trackit.yaml` file should be at `~/trackit.yaml`, but you can customize that in the `--config-file` flag
-to `trackit init`.
-
-After running `trackit init` (see above), run `trackit import`. Now you can list transactions (`trackit list`), search (`trackit search`)
-etc. Run `trackit -h` for more options.
+Now run `trackit transaction import`. That should import all transactions from your CSV files.
 
 ## Manual Transactions
 You can manually add transactions (e.g. cash transactions) with `trackit add`. See `trackit add -h` for more.
