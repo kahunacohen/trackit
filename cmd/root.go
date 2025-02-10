@@ -36,8 +36,8 @@ func logLn(msg string, verbose bool) {
 		log.Println(msg)
 	}
 }
-func logF(msg string, verbose bool, args ...interface{}) {
+func logF(verbose bool, msg string, args ...interface{}) {
 	if verbose {
-		log.Printf(msg, args)
+		log.Printf(msg, args...)
 	}
 }

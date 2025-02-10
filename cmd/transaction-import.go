@@ -81,7 +81,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 	if err != nil {
 		return fmt.Errorf("error getting absolute path for data directory: %w", err)
 	}
-	logF("walking file path: %s\n", verbose, dataPath)
+	logF(verbose, "walking file path: %s\n", dataPath)
 	err = filepath.Walk(dataPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -91,7 +91,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			if !validateFileName(fileName, conf) {
 				return fmt.Errorf("file name '%s' is invalid: it must be a name of a bank account (with spaces separated by '_') defined in trackit.yaml with a .csv extension", path)
 			}
-			logF("found CSV file: %s", verbose, path)
+			logF(verbose, "found CSV file: %s", path)
 			file, err := os.Open(path)
 			if err != nil {
 				return fmt.Errorf("error opening %s: %w", path, err)
@@ -114,7 +114,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
 			}
 			if fileHash == hashFromDb {
-				logF("file %s has not changed, skip processing\n", verbose, path)
+				logF(verbose, "file %s has not changed, skip processing\n", path)
 				tx.Rollback()
 				return nil
 			}
@@ -247,7 +247,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
-				logF("inserting transaction for %f\n", verbose, amount)
+				logF(verbose, "inserting transaction for %f\n", amount)
 				err = txQueries.CreateTransaction(ctx, models.CreateTransactionParams{
 					AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
 					Date:         date.Format("2006-01-02"),
@@ -260,13 +260,13 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				}
 			} // end iteration of data rows in file
 			if hashFromDb == "" {
-				logF("file %s had never been processed, insert hash to db\n", verbose, path)
+				logF(verbose, "file %s had never been processed, insert hash to db\n", path)
 				if err := txQueries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting initial file hash: %w", err)
 				}
 			} else {
-				logF("file %s changed, update hash\n", verbose, path)
+				logF(verbose, "file %s changed, update hash\n", path)
 				err = txQueries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: path})
 				if err != nil {
 					tx.Rollback()
