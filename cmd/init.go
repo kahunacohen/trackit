@@ -88,9 +88,16 @@ cache file in the user cache directory.`,
 		}
 
 		queries := models.New(db)
-		// @TODO context
 		ctx := context.Background()
-		err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "data-dir", Value: dataPath})
+		_, err = queries.ReadSettingByName(ctx, "data-dir")
+		if err != nil {
+			if err == sql.ErrNoRows {
+				// Only create setting if it doesn't already exist.
+				err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "data-dir", Value: dataPath})
+			} else {
+				return fmt.Errorf("error reading data-dir from settings")
+			}
+		}
 		if err != nil {
 			return fmt.Errorf("error setting data path: %w", err)
 		}
