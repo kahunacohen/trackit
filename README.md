@@ -1,10 +1,10 @@
 # trackit
 `trackit` is a cross-platform, light-weight CLI (command-line-interface) personal finance tracking tool. It's
 meant for power-users (programmer types) who prefer working on the command-line over GUIs and prefer to avoid
-network traffic and/or handing over financial data.
+network traffic when managing personal financial data.
 
 Its main method of ingesting transaction records is by parsing and importing CSV files downloaded from your
-bank accounts into an embedded, file-based [sqlite](https://sqlite.org/) database. It also allows you to manually
+bank accounts into an embedded, file-based [sqlite](https://sqlite.org/) database, but it also allows you to manually
 manage transactions if need be.
 
 ## Features
@@ -24,14 +24,15 @@ manage transactions if need be.
 1. [Download](https://github.com/kahunacohen/trackit/releases/) the correct version of trackit for your operating system (under `assets`).
 1. Unzip the zip file.
 1. Put the `trackit` executable in your path.
-1. The data directory (from which it imports CSV files from) is by default at `~/trackit-data`. Create that directory, if it doesn't exist.
-   You can change the default data directory. See `trackit init -h`.
-1. Download monthly transactions from your bank in CSV format and put them into your data directory. You can organize the files however you
-   like in that directory, **as long as the name of the file contains the bank account key** somewhere in the file name. The bank account key
-   is the name of the bank account with underscores that you set in the `trackit.yaml` file below. For example if one of your bank account keys
-   is `bank_of_america`, you can name the file `bank_of_america_transactions.csv`.
-1. Create a `trackit.yaml` configuration file. By default it should go to `~/trackit.yaml`, but you can set a custom location. See `trackit init -h`.
-   In the `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
+1. The data directory (the directory where `trackit` imports CSV files from) is, by default, at `~/trackit-data`.
+   Create that directory, if it doesn't exist. You can change the default data directory if you want it to be somewhere else
+   on your filesystem. See `trackit init -h`.
+1. Download monthly transactions from your bank in CSV format and put them into your data directory. You can organize the 
+   files however you like in that directory, **as long as the name of the file contains the bank account key** somewhere in the file name. The bank account key is the name of the bank account with underscores that you set in the `trackit.yaml` file below. For example if one of your bank account keys
+   is `bank_of_america`, you can name the file `bank_of_america_transactions.csv`, as long as **bank_of_america** is a substring
+   of the filename.
+1. Create a `trackit.yaml` configuration file. By default it should go to `~/trackit.yaml`, but you can set a custom location.
+   See `trackit init -h`. In your `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
    
    * `transaction_date`
    * `counter_party`
@@ -41,12 +42,15 @@ If a header in the CSV file doesn't map to any table, set the table to: `~`. Her
 
 ```yaml
 accounts:
-  bank_of_america:
+  bank_of_america: # this is the one of the bank acount keys: bank_of_america
+
     # the date reference layout for this account's CSV.
     # The reference date is Jan 1 2006. The entry below means
-    # that for the bank_of_america CSV files, the date is formatted
-    # mm/dd/yyyy.
+    # that in the bank_of_america CSV files, the dates are formatted
+    # like:  mm/dd/yyyy.
     date_layout: 01/02/2006
+
+    # These are the headers of the bank_of_america CSV file
     headers:
       - name: Posted Date # This is the CSV column header for the bank_of_america.csv file
         table: transaction_date # This is the trackit database table it maps to
@@ -67,7 +71,7 @@ accounts:
 Now run `trackit transaction import`. That should import all transactions from your CSV files.
 
 ## Manual Transactions
-You can manually add transactions (e.g. cash transactions) with `trackit add`. See `trackit add -h` for more.
+You can manually add transactions (e.g. cash transactions) with `trackit transaction create`. See `trackit transaction create -h` for more.
 
 ## Multi-currency
 trackit supports multi-currency. Add a `base_currency` key in `trackit.yaml` and set the appropriate currency code
@@ -103,6 +107,7 @@ accounts:
         table: counter_party
       - name: reference
         table: ~
+
       # if the CSV file has separate withdrawl fields and deposit fields (instead of one amount field),
       # then map them to deposit/withdrawl table instead of one amount table.
       - name: withdrawl 
@@ -115,22 +120,18 @@ accounts:
         table: ~
 ```
 
-Then under each month directory, add a `rates.yaml` file. This should be set to the average exchange rate for
-the month. E.g. at `~/trackit-data/2024-10/rates.yaml`, the yaml should look like:
+`trackit` includes commonly used currency symbols. See `trackit currency list`. If you need to add a currency,
+do `trackit currency create`. 
 
-```yaml
-exchange_rates:
-  - from: USD
-    to: ILS
-    rate: 3.75
-```
+Now, for each month, get the average conversion rate and add it with `trackit rate create`.
+
 ## Separate deposit/withdrawl fields
 Some downloaded CSV transaction rows have an amount field that is positive (deposits) or negative (withdrawls). Other
 CSV downloads will have separate columns for deposits and withdrawls. `trackit` has an `amount` table for the former case
 and `deposit`/`withdrawl` tables for the latter case. See example yaml above.
 
 ## Aggregating
-You can aggregate transactions and get monthly reports by category using `trackit aggregate`. Currently
+You can view aggregate transactions and get monthly reports by category using `trackit transaction aggregate`. Currently
 aggregating by other facets is not implemented. But you can run custom SQL queries.
 
 ## Ignoring transactions
@@ -140,14 +141,17 @@ spending. See `trackit ignore`.
 
 ## Custom queries/Syncing
 Because the data is stored in a relational sqlite db (in the trackit.db file), you can make custom
-queries against the database. You must install sqlite. Then do:
+queries against the database. For now you must install sqlite on your platform. Then do:
 
 ```
 sqlite3 ~/trackit.db
 ```
 
-...and make whatever queries you like. You can also save queries in a file and run them. You could
-sync the db file using Google drive, or some other mechanism, to other devices and install trackit on those devices.
+...and make whatever queries you like. You can also save queries in a file and run them:
+
+```
+sqlite3 ~/trackit.db < custom.sql
+```
 
 ## More
 For more about what you can do with `trackit`, see the help. E.g.
