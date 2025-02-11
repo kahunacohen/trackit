@@ -44,22 +44,22 @@ cache file in the user cache directory.`,
 		// save this to the DB  because storing
 		// that would create a circular dependency. We need the db to get the setting
 		// and need the setting to get the db.
-		cacheDir, err := os.UserCacheDir()
+		userConfigDir, err := os.UserConfigDir()
 		if err != nil {
 			return fmt.Errorf("can't get user cache dir: %w", err)
 		}
-		cachePath := filepath.Join(cacheDir, "trackit")
-		if err := os.MkdirAll(cachePath, 0755); err != nil {
-			return fmt.Errorf("error creating trackit cache directory: %w", err)
+		userConfigPath := filepath.Join(userConfigDir, "trackit")
+		if err := os.MkdirAll(userConfigPath, 0755); err != nil {
+			return fmt.Errorf("error creating trackit config directory: %w", err)
 		}
-		file, err := os.OpenFile(filepath.Join(cachePath, "cache"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		userConfigFile, err := os.OpenFile(filepath.Join(userConfigPath, "db-path"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
-			return fmt.Errorf("failed to open cache file: %w", err)
+			return fmt.Errorf("failed to open config file: %w", err)
 		}
-		defer file.Close()
-		_, err = file.WriteString(dbFilePath)
+		defer userConfigFile.Close()
+		_, err = userConfigFile.WriteString(dbFilePath)
 		if err != nil {
-			return fmt.Errorf("failed to write db-path to cache file: %w", err)
+			return fmt.Errorf("failed to write db-path to config file: %w", err)
 		}
 
 		configFilePath, _ := cmd.Flags().GetString("config-file")
