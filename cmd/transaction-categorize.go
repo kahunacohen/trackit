@@ -19,7 +19,8 @@ import (
 )
 
 var transactionCategorizeCmd = &cobra.Command{
-	Use: "categorize",
+	Use:     "categorize",
+	Aliases: []string{"cat"},
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
 			return fmt.Errorf("too many arguments, expected at most 1")

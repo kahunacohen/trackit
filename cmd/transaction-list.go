@@ -17,9 +17,10 @@ import (
 )
 
 var transactionListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "Lists transactions",
-	Long:  `Lists transactions.`,
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "Lists transactions",
+	Long:    `Lists transactions.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")

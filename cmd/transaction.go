@@ -9,9 +9,10 @@ import (
 
 // transactionCmd represents the transaction command
 var transactionCmd = &cobra.Command{
-	Use:   "transaction",
-	Short: "Manages transactions",
-	Long:  `Manages transactions including creating, updating, and deleting.`,
+	Use:     "transaction",
+	Aliases: []string{"tr"},
+	Short:   "Manages transactions",
+	Long:    `Manages transactions including creating, updating, and deleting.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Usage()
 	},
