@@ -24,7 +24,6 @@ var transactionListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
-
 		db, err := getDB()
 		if err != nil {
 			return err

@@ -27,6 +27,7 @@ func getDB() (*sql.DB, error) {
 	if path == nil {
 		return nil, errors.New("path to database is nil")
 	}
+	logF(verbose, "opening database at: %s", *path)
 	return sql.Open("sqlite", *path)
 }
 
