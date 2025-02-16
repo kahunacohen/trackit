@@ -31,7 +31,7 @@ manage transactions if need be.
    files however you like in that directory, **as long as the name of the file contains the bank account key** somewhere in the file name. The bank account key is the name of the bank account with underscores that you set in the `trackit.yaml` file below. For example if one of your bank account keys
    is `bank_of_america`, you can name the file `bank_of_america_transactions.csv`, as long as **bank_of_america** is a substring
    of the filename.
-1. Create a `trackit.yaml` configuration file. By default it should go to `~/trackit.yaml`, but you can set a custom location.
+1. Create a `trackit.yaml` configuration file. By default it will be `~/trackit-data/trackit.yaml`, but you can set a custom location.
    See `trackit init -h`. In your `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
    
    * `transaction_date`
@@ -138,6 +138,16 @@ aggregating by other facets is not implemented. But you can run custom SQL queri
 Sometimes you might want to mark a transaction to ignore for summing or aggregation purposes. Say, for example, you
 make a transfer from one account to another. You might not want trackit to see that as a debit or credit to your overall
 spending. See `trackit ignore`.
+
+## Working across machines
+It's avisable to back up the `~/trackit-data` directory, as that's where all your CSV files are, your `trackit.yaml` config file
+and your `trackit.db` database file is. For example, you can put this in github (private repo).
+
+If you want to work across multiple machines, simply ensure you have a synced version of `trackit-data` at `~/` or some
+other location. If it's at another location, you have to register the locations of the data directory (CSV files), the `trackit.yaml` file
+and the database file, `trackit.db` with the approprate flags to `trackit init`.
+
+Run `trackit init`.
 
 ## Custom queries/Syncing
 Because the data is stored in a relational sqlite db (in the trackit.db file), you can make custom
