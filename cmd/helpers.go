@@ -21,22 +21,35 @@ func roundAmount(amount float64) float64 {
 
 func getDB() (*sql.DB, error) {
 	path, err := getDBPath()
+	fmt.Println(*path)
 	if err != nil {
 		return nil, err
 	}
 	if path == nil {
 		return nil, errors.New("path to database is nil")
 	}
-	logF(verbose, "opening database at: %s", *path)
-	return sql.Open("sqlite", *path)
+	_, err = os.Stat(*path)
+	dbExists := !os.IsNotExist(err)
+	var dsn string
+	if dbExists {
+		logLn("database already exists", verbose)
+		dsn = fmt.Sprintf("%s?mode=rw", *path)
+
+	} else {
+		logLn("database does not exist", verbose)
+		dsn = fmt.Sprintf("%s?mode=rw&create=true", *path)
+	}
+	logF(verbose, "opening database: %s", dsn)
+	return sql.Open("sqlite", dsn)
 }
 
 func getDBPath() (*string, error) {
-	cacheDir, err := os.UserCacheDir()
+	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return nil, fmt.Errorf("can't find user cache dir: %w", err)
 	}
-	cachePath := filepath.Join(cacheDir, "trackit", "cache")
+	cachePath := filepath.Join(configDir, "trackit", "db-path")
+	fmt.Println(cachePath)
 	bytes, err := os.ReadFile(cachePath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading %s: %w", cachePath, err)

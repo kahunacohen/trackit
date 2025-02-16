@@ -27,7 +27,7 @@ var initCmd = &cobra.Command{
 the path to the config file in the database and caches the path to the database file in a
 cache file in the user cache directory.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbose, _ := cmd.Flags().GetBool("verbose")
+		verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
 		dataPath, _ := cmd.Flags().GetString("data-path")
 		dataPath, err := filepath.Abs(dataPath)
 		if err != nil {
@@ -35,6 +35,7 @@ cache file in the user cache directory.`,
 		}
 
 		dbFilePath, _ := cmd.Flags().GetString("db-path")
+		fmt.Println(dbFilePath)
 		dbFilePath, err = filepath.Abs(dbFilePath)
 		if err != nil {
 			return fmt.Errorf("error getting absolute path for supplied db-path: %w", err)
@@ -46,7 +47,7 @@ cache file in the user cache directory.`,
 		// and need the setting to get the db.
 		userConfigDir, err := os.UserConfigDir()
 		if err != nil {
-			return fmt.Errorf("can't get user cache dir: %w", err)
+			return fmt.Errorf("can't get user config dir: %w", err)
 		}
 		userConfigPath := filepath.Join(userConfigDir, "trackit")
 		if err := os.MkdirAll(userConfigPath, 0755); err != nil {
@@ -57,6 +58,7 @@ cache file in the user cache directory.`,
 			return fmt.Errorf("failed to open config file: %w", err)
 		}
 		defer userConfigFile.Close()
+		logF(verbose, "perisisting DB path at: %s with %s", filepath.Join(userConfigPath, "db-path"), dbFilePath)
 		_, err = userConfigFile.WriteString(dbFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to write db-path to config file: %w", err)
