@@ -29,16 +29,16 @@ SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () 
 SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () AS total_amount FROM transactions_view WHERE strftime('%Y-%m', "date") = ?;
 
 -- name: AggregateTransactions :many
-SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) AS total_amount FROM transactions_view WHERE ignore_when_summing = false GROUP BY category_name ORDER BY total_amount;
+SELECT COALESCE(category_name, 'Uncategorized') AS category_name, ROUND(SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END), 2) AS total_amount FROM transactions_view WHERE ignore_when_summing = false GROUP BY category_name ORDER BY total_amount;
 
 -- name: AggregateTransactionsByAccountName :many
-SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND account_name=? GROUP BY category_name ORDER BY total_amount;
+SELECT COALESCE(category_name, 'Uncategorized') AS category_name, ROUND(SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END), 2) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND account_name=? GROUP BY category_name ORDER BY total_amount;
 
 -- name: AggregateTransactionsByDate :many
-SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND strftime('%Y-%m', "date")=? GROUP BY category_name ORDER BY total_amount;
+SELECT COALESCE(category_name, 'Uncategorized') AS category_name, ROUND(SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END), 2) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND strftime('%Y-%m', "date")=? GROUP BY category_name ORDER BY total_amount;
 
 -- name: AggregateTransactionsByAccountNameAndDate :many
-SELECT COALESCE(category_name, 'Uncategorized') AS category_name, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND account_name=? AND strftime('%Y-%m', date)=? GROUP BY category_name ORDER BY total_amount;
+SELECT COALESCE(category_name, 'Uncategorized') AS category_name, ROUND(SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END), 2) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND account_name=? AND strftime('%Y-%m', date)=? GROUP BY category_name ORDER BY total_amount;
 
 -- name: SearchTransactionsWithSum :many
 SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%' ORDER BY "date" DESC;

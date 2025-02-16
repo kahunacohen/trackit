@@ -8,9 +8,10 @@ import (
 )
 
 var categoryCmd = &cobra.Command{
-	Use:   "category",
-	Short: "Manages transaction categories",
-	Long:  `Manages transaction categories`,
+	Use:     "category",
+	Aliases: []string{"cat"},
+	Short:   "Manages transaction categories",
+	Long:    `Manages transaction categories`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Usage()
 	},

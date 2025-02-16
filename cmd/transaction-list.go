@@ -74,9 +74,7 @@ func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Category", "Total"})
 	for _, aggregate := range aggregates {
-		if aggregate.TotalAmount.Valid {
-			t.AppendRow([]interface{}{aggregate.CategoryName, roundAmount(aggregate.TotalAmount.Float64)})
-		}
+		t.AppendRow([]interface{}{aggregate.CategoryName, fmt.Sprintf("%.2f", aggregate.TotalAmount)})
 	}
 	t.Render()
 }
