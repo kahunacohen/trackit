@@ -23,9 +23,10 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Intializes the internal sqlite database and parses the config.",
-	Long: `Initializes the internal sqlite database and parses the configuration. Saves
-the path to the config file in the database and caches the path to the database file in a
-cache file in the user cache directory.`,
+	Long: `Initializes (or registers an existing) internal sqlite database and parses the configuration.
+You should call trackit init when moving an existing database (trackit.db) to another machine. If
+the database file is in a different location than the default (~/trackit-data), then specify the -p flag
+to point to where the trackit.db is.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
 		dataPath, _ := cmd.Flags().GetString("data-path")
@@ -35,30 +36,21 @@ cache file in the user cache directory.`,
 		}
 
 		dbFilePath, _ := cmd.Flags().GetString("db-path")
-		fmt.Println(dbFilePath)
 		dbFilePath, err = filepath.Abs(dbFilePath)
 		if err != nil {
 			return fmt.Errorf("error getting absolute path for supplied db-path: %w", err)
 		}
 
-		// Save the path to the db in a local cache file for later access. Don't
-		// save this to the DB  because storing
-		// that would create a circular dependency. We need the db to get the setting
-		// and need the setting to get the db.
-		userConfigDir, err := os.UserConfigDir()
+		dbCachePath, err := getDBPathCache()
 		if err != nil {
-			return fmt.Errorf("can't get user config dir: %w", err)
+			return err
 		}
-		userConfigPath := filepath.Join(userConfigDir, "trackit")
-		if err := os.MkdirAll(userConfigPath, 0755); err != nil {
-			return fmt.Errorf("error creating trackit config directory: %w", err)
-		}
-		userConfigFile, err := os.OpenFile(filepath.Join(userConfigPath, "db-path"), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		userConfigFile, err := os.OpenFile(dbCachePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			return fmt.Errorf("failed to open config file: %w", err)
 		}
 		defer userConfigFile.Close()
-		logF(verbose, "perisisting DB path at: %s with %s", filepath.Join(userConfigPath, "db-path"), dbFilePath)
+		logF(verbose, "perisisting DB path at: %s with %s", dbCachePath, dbFilePath)
 		_, err = userConfigFile.WriteString(dbFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to write db-path to config file: %w", err)

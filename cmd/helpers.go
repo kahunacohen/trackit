@@ -21,7 +21,6 @@ func roundAmount(amount float64) float64 {
 
 func getDB() (*sql.DB, error) {
 	path, err := getDBPath()
-	fmt.Println(*path)
 	if err != nil {
 		return nil, err
 	}
@@ -43,13 +42,23 @@ func getDB() (*sql.DB, error) {
 	return sql.Open("sqlite", dsn)
 }
 
-func getDBPath() (*string, error) {
-	configDir, err := os.UserConfigDir()
+// Gets the path to the file we use to cache the path to the DB file (trackit.db).
+// This file is created and read because of the "bootstrapping problem". You can't store
+// the path to the database itself in the database.
+func getDBPathCache() (string, error) {
+	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("can't find user cache dir: %w", err)
+		return "", fmt.Errorf("can't get user config dir: %w", err)
 	}
-	cachePath := filepath.Join(configDir, "trackit", "db-path")
-	fmt.Println(cachePath)
+	return filepath.Join(userConfigDir, "trackit", "db-path"), nil
+
+}
+
+func getDBPath() (*string, error) {
+	cachePath, err := getDBPathCache()
+	if err != nil {
+		return nil, fmt.Errorf("error getting cache file to db path: %w", err)
+	}
 	bytes, err := os.ReadFile(cachePath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading %s: %w", cachePath, err)
