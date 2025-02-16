@@ -14,10 +14,11 @@ import (
 )
 
 var currencyCreateCmd = &cobra.Command{
-	Use:   "create",
-	Args:  cobra.ExactArgs(1),
-	Short: "Creates a new ISO 4217 currency symbol. trackit currency create ILS",
-	Long:  `Creates a new ISO 4217 three-letter ISO symbol. "USD" is pre-populated. trackit currency create ILS`,
+	Use:     "create",
+	Aliases: []string{"add"},
+	Args:    cobra.ExactArgs(1),
+	Short:   "Creates a new ISO 4217 currency symbol. trackit currency create ILS",
+	Long:    `Creates a new ISO 4217 three-letter ISO symbol. "USD" is pre-populated. trackit currency create ILS`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args[0]) != 3 {
 			return errors.New("currency symbol must be three characters")

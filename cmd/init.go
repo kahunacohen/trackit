@@ -124,9 +124,9 @@ func init() {
 	}
 	initCmd.Flags().StringP("data-path", "d", filepath.Join(homeDir, "trackit-data"),
 		"Specify the desired path to the directory holding the downloaded CSVs.")
-	initCmd.Flags().StringP("db-path", "p", filepath.Join(homeDir, "trackit.db"),
+	initCmd.Flags().StringP("db-path", "p", filepath.Join(homeDir, "trackit-data", "trackit.db"),
 		"Specify the desired path to the trackit.db (sqlite) database file, including the name of the file")
-	initCmd.Flags().StringP("config-file", "c", homeDir+"/trackit.yaml",
+	initCmd.Flags().StringP("config-file", "c", filepath.Join(homeDir, "trackit-data", "trackit.yaml"),
 		"Specify the path to the trackit.yaml config file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
 }

@@ -14,8 +14,9 @@ import (
 )
 
 var transactionCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "creates a transaction",
+	Use:     "create",
+	Aliases: []string{"add"},
+	Short:   "creates a transaction",
 	Long: `With create, you can create a transaction that is not listed in
 one of your CSV files. For example, say somebody gives you cash as a gift.`,
 	RunE: func(cmd *cobra.Command, args []string) error {

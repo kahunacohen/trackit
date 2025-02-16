@@ -13,9 +13,10 @@ import (
 )
 
 var rateCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "creates a rate for a given month",
-	Long:  `creates a rate for a given month`,
+	Use:     "create",
+	Aliases: []string{"add"},
+	Short:   "creates a rate for a given month",
+	Long:    `creates a rate for a given month`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		month, _ := cmd.Flags().GetString("month")
 		if !validateYearMonthFormat(month) {

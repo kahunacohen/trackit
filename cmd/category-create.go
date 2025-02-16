@@ -13,10 +13,11 @@ import (
 )
 
 var categoryCreateCmd = &cobra.Command{
-	Use:   "create",
-	Args:  cobra.ExactArgs(1),
-	Short: "Creates a category. categories add <name>",
-	Long:  `Creates a category, taking one positional argument (category name). categories add <name>`,
+	Use:     "create",
+	Aliases: []string{"add"},
+	Args:    cobra.ExactArgs(1),
+	Short:   "Creates a category. categories add <name>",
+	Long:    `Creates a category, taking one positional argument (category name). categories add <name>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		db, err := getDB()
 		if err != nil {
