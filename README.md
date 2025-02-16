@@ -140,8 +140,8 @@ make a transfer from one account to another. You might not want trackit to see t
 spending. See `trackit ignore`.
 
 ## Working across machines
-It's avisable to back up the `~/trackit-data` directory, as that's where all your CSV files are, your `trackit.yaml` config file
-and your `trackit.db` database file is. For example, you can put this in github (private repo).
+It's avisable to back up the `~/trackit-data` directory, as that's where all your CSV files are, `trackit.yaml` config file,
+and your `trackit.db` database file are. For example, you can put this in github (private repo).
 
 If you want to work across multiple machines, simply ensure you have a synced version of `trackit-data` at `~/` or some
 other location. If it's at another location, you have to register the locations of the data directory (CSV files), the `trackit.yaml` file
