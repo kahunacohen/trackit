@@ -11,4 +11,5 @@ INSERT OR IGNORE INTO categories ("name") VALUES (?);
 DELETE FROM categories WHERE id=?;
 
 -- name: UpdateCategory :exec
-UPDATE categories SET name= ? WHERE id= ?;
+UPDATE categories SET name = sqlc.arg(newCategory) WHERE name = sqlc.arg(oldCategory);
+
