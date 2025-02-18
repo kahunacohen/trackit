@@ -172,3 +172,13 @@ trackit init -h
 trackit categorize -h
 # etc.
 ```
+
+## TODO
+1. Autocomplete when categorizing
+1. Easy quit when categorizing
+1. Add category when categorizing
+1. Tagging
+1. Descriptions
+1. Search across categories
+
+מסלול מורחב ?

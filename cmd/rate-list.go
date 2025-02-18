@@ -15,9 +15,10 @@ import (
 )
 
 var rateListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "Lists the conversion rates",
-	Long:  `Lists the the conversion rates. trackit rate list`,
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "Lists the conversion rates",
+	Long:    `Lists the the conversion rates. trackit rate list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		month, _ := cmd.Flags().GetString("month")
 		db, err := getDB()

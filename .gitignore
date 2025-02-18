@@ -5,3 +5,4 @@ test/data
 test/trackit.yaml
 internal/models/*
 cmd/schema.sql
+trackit
