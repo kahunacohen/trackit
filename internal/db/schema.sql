@@ -59,6 +59,7 @@ INSERT OR IGNORE INTO categories (name) VALUES
 ('Miscellaneous'),
 ('Mortgage/Rent'),
 ('Personal Care'),
+('Pet Care'),
 ('Professional Development'),
 ('Savings'),
 ('Special Occasions'),
