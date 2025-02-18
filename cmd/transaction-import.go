@@ -292,7 +292,10 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("error getting category ID: %w", err)
 					}
 				}
-				logF(verbose, "inserting transaction for %f\n", amount)
+				if accountFromConf.DebitAsPositive {
+					amount = -amount
+				}
+				logF(verbose, "inserting transaction for %f, in account: %s\n", amount, accountNameFromFile)
 				err = txQueries.CreateTransaction(ctx, models.CreateTransactionParams{
 					AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
 					Date:         date.Format("2006-01-02"),

@@ -10,6 +10,7 @@ import (
 type Account struct {
 	Currency           string              `yaml:"currency"`
 	DateLayout         string              `yaml:"date_layout"`
+	DebitAsPositive    bool                `yaml:"debit_as_positive"`
 	Headers            []map[string]string `yaml:"headers"`
 	ThousandsSeparator string              `yaml:"thousands_separator"`
 }
