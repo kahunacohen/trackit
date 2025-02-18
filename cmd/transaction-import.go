@@ -155,7 +155,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				date, err := time.Parse(dateLayout, rowDateStr)
 				if err != nil {
 					tx.Rollback()
-					return fmt.Errorf("error parsing date: %v for account %s", row[colIndices["transaction_date"]], accountNameFromFile)
+					return fmt.Errorf("error parsing date: %v with layout: %s for account %s", row[colIndices["transaction_date"]], dateLayout, accountNameFromFile)
 				}
 				var amount float64
 				thousandsSeparator := accountFromConf.ThousandsSeparator
@@ -231,7 +231,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				bankAccountId, err := txQueries.ReadAccountIdByName(ctx, accountNameFromFile)
 				if err != nil {
 					tx.Rollback()
-					return fmt.Errorf("error getting bank account ID for %s", accountNameFromFile)
+					return fmt.Errorf("error getting bank account ID for %s: %w", accountNameFromFile, err)
 				}
 				categoryName, err := getCategory(conf, counterParty)
 				if err != nil {
