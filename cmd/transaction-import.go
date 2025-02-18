@@ -144,6 +144,28 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			dateLayout := accountFromConf.DateLayout
 			colIndices := accountsToColIndices[accountNameFromFile]
 			bankAccountCurrency := accountFromConf.Currency
+
+			// Insert bank account name into db if it doesn't exist. @TODO put a unique constraint
+			// on account.name then we can use IGNORE in sqlite.
+			// _, err = txQueries.ReadAccountIdByName(ctx, accountNameFromFile)
+			// if err != nil {
+			// 	if err == sql.ErrNoRows {
+			// 		// Account doesn't exist so create it.
+			// 		if err := txQueries.CreateAccountIfNotExists(ctx, accountNameFromFile); err != nil {
+			// 			tx.Rollback()
+			// 			return fmt.Errorf("error creating account name %s in db: %w", accountNameFromFile, err)
+			// 		}
+			// 		logF(verbose, "creating new account in DB: %s", accountNameFromFile)
+			// 	} else {
+			// 		tx.Rollback()
+			// 		return fmt.Errorf("error trying to get account name %s: %w", accountNameFromFile, err)
+			// 	}
+			// }
+
+			// if err := txQueries.CreateAccountIfNotExists(ctx, accountNameFromFile); err != nil {
+			// 	tx.Rollback()
+			// 	return fmt.Errorf("error creating account name %s in db: %w", accountNameFromFile, err)
+			// }
 			for _, headerInConfig := range headersInConfig {
 				if !slices.Contains(headersInFile, headerInConfig) {
 					tx.Rollback()
@@ -228,7 +250,31 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				}
 
 				counterParty := row[colIndices["counter_party"]]
+
+				// Get bank account if it exists, otherwise create it in DB. @TODO create function
 				bankAccountId, err := txQueries.ReadAccountIdByName(ctx, accountNameFromFile)
+				if err != nil {
+					if err == sql.ErrNoRows {
+						_, err = txQueries.CreateAccount(ctx, models.CreateAccountParams{Name: accountNameFromFile, Currency: bankAccountCurrency})
+						if err != nil {
+							tx.Rollback()
+							return fmt.Errorf("error creating account in DB: %s: %w", accountNameFromFile, err)
+						}
+						// Need to do this because we are in the middle of a transaction.
+						// @TODO one solution is to create any necessary bank acccounts first before this loop by
+						// looking at the config and creating then as a pre-step.
+						err = tx.QueryRowContext(ctx, "SELECT last_insert_rowid()").Scan(&bankAccountId)
+						logF(verbose, "creating account for %s with ID: %d", accountNameFromFile, bankAccountId)
+
+						if err != nil {
+							tx.Rollback()
+							return fmt.Errorf("error getting just inserted bankAccountID: %w", err)
+						}
+					} else {
+						tx.Rollback()
+						return fmt.Errorf("error getting bank account ID for %s: %w", accountNameFromFile, err)
+					}
+				}
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error getting bank account ID for %s: %w", accountNameFromFile, err)

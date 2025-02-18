@@ -11,12 +11,15 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
+
+var categoryNames []string
 
 var transactionCategorizeCmd = &cobra.Command{
 	Use:     "categorize",
@@ -57,7 +60,6 @@ trackit categorize <id>`,
 		for _, category := range categories {
 			categoryMap[category.Name] = category.ID
 		}
-		var categoryNames []string
 		for _, category := range categories {
 			categoryNames = append(categoryNames, category.Name)
 		}
@@ -83,8 +85,10 @@ trackit categorize <id>`,
 					transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
 
 				prompt := promptui.Select{
-					Label: t.Render(),
-					Items: categoryNames,
+					Label:             t.Render(),
+					Items:             categoryNames,
+					StartInSearchMode: true,
+					Searcher:          seacher,
 				}
 				_, categoryNameResult, err := prompt.Run()
 				if err != nil {
@@ -109,8 +113,9 @@ trackit categorize <id>`,
 			t.AppendHeader(table.Row{"Date", "Account", "Payee", "Amount"})
 			t.AppendRow([]interface{}{transaction.Date, transaction.AccountName.String, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
 			prompt := promptui.Select{
-				Label: t.Render(),
-				Items: categoryNames,
+				Label:    t.Render(),
+				Items:    categoryNames,
+				Searcher: seacher,
 			}
 			_, categoryNameResult, err := prompt.Run()
 			if err != nil {
@@ -129,4 +134,8 @@ trackit categorize <id>`,
 
 func init() {
 	transactionCmd.AddCommand(transactionCategorizeCmd)
+}
+
+func seacher(input string, i int) bool {
+	return strings.Contains(strings.ToLower(categoryNames[i]), strings.ToLower(input))
 }

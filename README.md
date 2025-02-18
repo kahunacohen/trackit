@@ -176,9 +176,12 @@ trackit categorize -h
 ## TODO
 1. Autocomplete when categorizing
 1. Easy quit when categorizing
+1. Pre loop and create accounts before walking so we don't have to get the account ID
+   in the middle of the transaction when walking.
 1. Add category when categorizing
 1. Tagging
 1. Descriptions
 1. Search across categories
+1. Add unique constraint on name in accounts
 
 מסלול מורחב ?
