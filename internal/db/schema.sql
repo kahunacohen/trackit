@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS transactions (
 	category_id INTEGER,
 	counter_party TEXT NOT NULL,
     "description" TEXT,
+    foo TEXT,
 	amount REAL NOT NULL,
 	deposit REAL,
 	withdrawl REAL,
@@ -38,36 +39,6 @@ CREATE TABLE IF NOT EXISTS categories (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	"name" TEXT UNIQUE NOT NULL
 );
-
-INSERT OR IGNORE INTO categories (name) VALUES
-('Business Expenses'),
-('Childcare'),
-('Clothing'),
-('Debt Payments'),
-('Dining Out'),
-('Donations'),
-('Education'),
-('Entertainment'),
-('Gifts'),
-('Groceries'),
-('Healthcare'),
-('Hobbies'),
-('Home Improvement'),
-('Household Supplies'),
-('Insurance'),
-('Investments'),
-('Miscellaneous'),
-('Mortgage/Rent'),
-('Personal Care'),
-('Professional Development'),
-('Savings'),
-('Special Occasions'),
-('Sports & Fitness'),
-('Subscriptions'),
-('Taxes'),
-('Transportation'),
-('Travel'),
-('Utilities');
 
 -- Drop the view if it exists because sqlite does not allow
 -- the IF EXISTS with view creation.
@@ -97,19 +68,6 @@ CREATE TABLE IF NOT EXISTS currency_codes (
     CHECK (LENGTH(symbol) = 3)
 );
 
-INSERT OR IGNORE INTO currency_codes (symbol) VALUES
-    ('AUD'),
-    ('CAD'),
-    ('CHF'),
-    ('CNY'),
-    ('EUR'),
-    ('GBP'),
-    ('HKD'),
-    ('ILS'),
-    ('JPY'),
-    ('NZD'),
-    ('USD');
-
 
 CREATE TABLE IF NOT EXISTS rates (
     id INTEGER PRIMARY KEY,
@@ -119,7 +77,3 @@ CREATE TABLE IF NOT EXISTS rates (
     FOREIGN KEY (currency_code_from_id) REFERENCES currency_codes(id) ON DELETE CASCADE,
     CHECK (month LIKE '____-__' AND substr(month, 1, 4) BETWEEN '0000' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12')
 );
-INSERT OR IGNORE INTO rates (rate, currency_code_from_id, "month") VALUES
-    (3.75, 11, '2024-09'),
-    (3.75, 11, '2024-10'),
-    (3.75, 11, '2024-11');
