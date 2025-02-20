@@ -41,7 +41,10 @@ SELECT COALESCE(category_name, 'Uncategorized') AS category_name, ROUND(SUM(CASE
 SELECT COALESCE(category_name, 'Uncategorized') AS category_name, ROUND(SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END), 2) AS total_amount FROM transactions_view WHERE ignore_when_summing = false AND account_name=? AND strftime('%Y-%m', date)=? GROUP BY category_name ORDER BY total_amount;
 
 -- name: SearchTransactionsWithSum :many
-SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%' ORDER BY "date" DESC;
+SELECT *, SUM(amount) OVER () AS total_amount 
+FROM transactions_view 
+WHERE CONCAT(counter_party, ' ', category_name) LIKE '%' || :search_term || '%'
+ORDER BY "date" DESC;
 
 -- name: SearchTransactionsByDateWithSum :many
 SELECT *, SUM(amount) OVER () AS total_amount FROM transactions_view WHERE counter_party LIKE '%' || :search_term || '%' AND strftime('%Y-%m', "date") = ? ORDER BY "date" DESC;

@@ -15,9 +15,10 @@ import (
 )
 
 var categoryListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "lists existing categories",
-	Long:  `lists existing categories. trackit category list`,
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "lists existing categories",
+	Long:    `lists existing categories. trackit category list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		db, err := getDB()
 		if err != nil {
