@@ -3,19 +3,19 @@
 -- The Makefile does this for you, but if you change the schema.sql file in development,
 -- you must manually copy it.
 CREATE TABLE IF NOT EXISTS settings (
-    "name" TEXT NOT NULL,
+    "name" TEXT NOT NULL UNIQUE,
     value TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    hash TEXT NOT NULL,
-    name TEXT NOT NULL
+    hash TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     currency TEXT NOT NULL
 );
 
@@ -25,7 +25,6 @@ CREATE TABLE IF NOT EXISTS transactions (
 	category_id INTEGER,
 	counter_party TEXT NOT NULL,
     "description" TEXT,
-    foo TEXT,
 	amount REAL NOT NULL,
 	deposit REAL,
 	withdrawl REAL,
@@ -50,6 +49,7 @@ SELECT
     accounts.name AS account_name, 
     transactions.id AS transaction_id, 
 	transactions.date AS date, 
+    transactions.description AS description,
     transactions.counter_party AS counter_party, 
     transactions.amount AS amount,
     transactions.ignore_when_summing as ignore_when_summing,
