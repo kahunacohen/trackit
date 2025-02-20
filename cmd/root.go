@@ -11,8 +11,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "trackit",
-	Short: "A CLI (command line application) for tracking personal finances",
+	Use:     "trackit",
+	Short:   "A CLI (command line application) for tracking personal finances",
+	Version: "0.1.0",
 	Long: `A CLI (command line application) for tracking personal finances. 
 For example:
 
