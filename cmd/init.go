@@ -110,13 +110,14 @@ to point to where the trackit.db is.`,
 		}
 		logLn("initialized accounts", verbose)
 
-		// @TODO pass tx
-		if err = initCategories(conf, db); err != nil {
+		if err = initCategories(ctx, conf, queries); err != nil {
+			tx.Rollback()
 			return fmt.Errorf("error initializing categories: %w", err)
 		}
 		logLn("initialized categories", verbose)
 
 		if err := queries.CreateSetting(ctx, models.CreateSettingParams{Name: "version", Value: cmd.Version}); err != nil {
+			tx.Rollback()
 			return fmt.Errorf("error setting version in DB: %w", err)
 		}
 		logLn("succesfully completed initialization", verbose)
@@ -172,21 +173,12 @@ func initAccounts(conf *config.Config, db *sql.DB) error {
 	return nil
 }
 
-func initCategories(conf *config.Config, db *sql.DB) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
+func initCategories(ctx context.Context, conf *config.Config, queries *models.Queries) error {
 	for _, category := range maps.Keys(conf.Categories) {
-		_, err := tx.Exec("INSERT INTO categories (name) VALUES (?)", category)
-		if err != nil {
-			tx.Rollback()
+		if err := queries.CreateCategory(ctx, category); err != nil {
 			return err
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		return err
+
 	}
 	return nil
 }
