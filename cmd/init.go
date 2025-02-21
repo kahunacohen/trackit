@@ -72,16 +72,22 @@ to point to where the trackit.db is.`,
 			return err
 		}
 		logLn("created database", verbose)
+		tx, err := db.Begin()
+		if err != nil {
+			return fmt.Errorf("error creating DB transaction: %w", err)
+		}
 		defer db.Close()
+		// @TODO pass tx
 		if err = initSchema(db); err != nil {
 			return fmt.Errorf("error initializing database schema: %w", err)
 		}
 		logLn("initialized schema", verbose)
+		// @TODO pass tx
 		if err = initAccounts(conf, db); err != nil {
 			return fmt.Errorf("error initializing accounts: %w", err)
 		}
 
-		queries := models.New(db)
+		queries := models.New(tx)
 		ctx := context.Background()
 		_, err = queries.ReadSettingByName(ctx, "data-dir")
 		if err != nil {
@@ -93,19 +99,26 @@ to point to where the trackit.db is.`,
 			}
 		}
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("error setting data path: %w", err)
 		}
 		err = queries.CreateSetting(ctx,
 			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("error writing config-file path to db: %w", err)
 		}
 		logLn("initialized accounts", verbose)
 
+		// @TODO pass tx
 		if err = initCategories(conf, db); err != nil {
 			return fmt.Errorf("error initializing categories: %w", err)
 		}
 		logLn("initialized categories", verbose)
+
+		if err := queries.CreateSetting(ctx, models.CreateSettingParams{Name: "version", Value: cmd.Version}); err != nil {
+			return fmt.Errorf("error setting version in DB: %w", err)
+		}
 		logLn("succesfully completed initialization", verbose)
 		return nil
 	},
