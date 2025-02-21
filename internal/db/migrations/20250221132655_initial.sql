@@ -66,3 +66,47 @@ CREATE TABLE `rates` (
  CONSTRAINT `0` FOREIGN KEY (`currency_code_from_id`) REFERENCES `currency_codes` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
  CHECK (month LIKE '____-__' AND substr(month, 1, 4) BETWEEN '0000' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12')
 );
+
+INSERT OR IGNORE INTO categories (name) VALUES
+    ('Business Expenses'),
+    ('Childcare'),
+    ('Clothing'),
+    ('Debt Payments'),
+    ('Dining Out'),
+    ('Donations'),
+    ('Education'),
+    ('Entertainment'),
+    ('Gifts'),
+    ('Groceries'),
+    ('Healthcare'),
+    ('Hobbies'),
+    ('Home Improvement'),
+    ('Household Supplies'),
+    ('Insurance'),
+    ('Investments'),
+    ('Miscellaneous'),
+    ('Mortgage/Rent'),
+    ('Personal Care'),
+    ('Pet Care'),
+    ('Professional Development'),
+    ('Savings'),
+    ('Special Occasions'),
+    ('Sports & Fitness'),
+    ('Subscriptions'),
+    ('Taxes'),
+    ('Transportation'),
+    ('Travel'),
+    ('Utilities');
+
+INSERT OR IGNORE INTO currency_codes (symbol) VALUES
+    ('AUD'),
+    ('CAD'),
+    ('CHF'),
+    ('CNY'),
+    ('EUR'),
+    ('GBP'),
+    ('HKD'),
+    ('ILS'),
+    ('JPY'),
+    ('NZD'),
+    ('USD');
