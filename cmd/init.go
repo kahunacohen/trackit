@@ -160,7 +160,7 @@ func runMigrations(dsn string) error {
 	if err != nil {
 		return fmt.Errorf("error instantiating migration object: %w", err)
 	}
-	if err := m.Up(); err != nil {
+	if err := m.Up(); err != nil && err.Error() != "no change" {
 		return fmt.Errorf("error migrating database: %w", err)
 	}
 	return nil
