@@ -39,7 +39,7 @@ func getDB() (*sql.DB, error) {
 		dsn = fmt.Sprintf("%s?mode=rw&create=true", *path)
 	}
 	logF(verbose, "opening database: %s", dsn)
-	return sql.Open("sqlite", dsn)
+	return sql.Open("sqlite3", dsn)
 }
 
 // Gets the path to the file we use to cache the path to the DB file (trackit.db).
