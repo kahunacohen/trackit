@@ -19,13 +19,13 @@ func roundAmount(amount float64) float64 {
 	return math.Round(amount*100) / 100
 }
 
-func getDB() (*sql.DB, error) {
+func getDB() (*sql.DB, string, error) {
 	path, err := getDBPath()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if path == nil {
-		return nil, errors.New("path to database is nil")
+		return nil, "", errors.New("path to database is nil")
 	}
 	_, err = os.Stat(*path)
 	dbExists := !os.IsNotExist(err)
@@ -39,7 +39,8 @@ func getDB() (*sql.DB, error) {
 		dsn = fmt.Sprintf("%s?mode=rw&create=true", *path)
 	}
 	logF(verbose, "opening database: %s", dsn)
-	return sql.Open("sqlite3", dsn)
+	db, err := sql.Open("sqlite3", dsn)
+	return db, fmt.Sprintf("file://%s", dsn), err
 }
 
 // Gets the path to the file we use to cache the path to the DB file (trackit.db).

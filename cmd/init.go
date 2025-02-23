@@ -6,21 +6,22 @@ package cmd
 import (
 	"context"
 	"database/sql"
-	_ "embed"
+	"embed"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/kahunacohen/trackit/internal/config"
 	"github.com/kahunacohen/trackit/internal/models"
 	"golang.org/x/exp/maps"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file" // Add this!
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/mattes/migrate/source/file"
 
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
 )
@@ -72,7 +73,7 @@ to point to where the trackit.db is.`,
 		}
 
 		logLn("parsed configuration file", verbose)
-		db, err := getDB()
+		db, dsn, err := getDB()
 		if err != nil {
 			return err
 		}
@@ -82,21 +83,10 @@ to point to where the trackit.db is.`,
 			return fmt.Errorf("error creating DB transaction: %w", err)
 		}
 		defer db.Close()
-		// @TODO pass tx
-		// if err = initSchema(db); err != nil {
-		// 	return fmt.Errorf("error initializing database schema: %w", err)
-		// }
 
-		driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+		err = runMigrations(dsn)
 		if err != nil {
-			return fmt.Errorf("error getting driver: %w", err)
-		}
-		m, err := migrate.NewWithDatabaseInstance("file:///home/aharonc/trackit/internal/db/migrations", "sqlite3", driver)
-		if err != nil {
-			return fmt.Errorf("error instantiating migration object: %w", err)
-		}
-		if err := m.Up(); err != nil {
-			return fmt.Errorf("error migrating database: %w", err)
+			return fmt.Errorf("error running migrations: %w", err)
 		}
 
 		logLn("migrated schema", verbose)
@@ -155,6 +145,26 @@ func init() {
 	initCmd.Flags().StringP("config-file", "c", filepath.Join(homeDir, "trackit-data", "trackit.yaml"),
 		"Specify the path to the trackit.yaml config file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
+}
+
+//go:embed migrations/*.sql
+var fss embed.FS
+
+func runMigrations(dsn string) error {
+	driver, err := iofs.New(fss, "migrations")
+	if err != nil {
+		return fmt.Errorf("error getting driver: %w", err)
+	}
+	fmt.Println(dsn)
+	m, err := migrate.NewWithSourceInstance("iofs", driver, "sqlite3:///home/aharonc/trackit-data/trackit.db")
+
+	if err != nil {
+		return fmt.Errorf("error instantiating migration object: %w", err)
+	}
+	if err := m.Up(); err != nil {
+		return fmt.Errorf("error migrating database: %w", err)
+	}
+	return nil
 }
 
 // Initialize the schema by embedding the schema file (which sqlc also uses)

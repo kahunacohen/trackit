@@ -20,7 +20,7 @@ var categoryDeleteCmd = &cobra.Command{
 	Long: `Deletes an existing category by ID. trackit categories delete <id>. Get the category
 id by doing trackit categories list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := getDB()
+		db, _, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

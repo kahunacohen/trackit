@@ -20,7 +20,7 @@ var categoryUpdateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fromCat := args[0]
 		toCat := args[1]
-		db, err := getDB()
+		db, _, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

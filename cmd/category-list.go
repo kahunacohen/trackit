@@ -20,7 +20,7 @@ var categoryListCmd = &cobra.Command{
 	Short:   "lists existing categories",
 	Long:    `lists existing categories. trackit category list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := getDB()
+		db, _, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

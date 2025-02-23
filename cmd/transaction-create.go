@@ -33,7 +33,7 @@ one of your CSV files. For example, say somebody gives you cash as a gift.`,
 			if !validateDateWithDayFormat(date) {
 				return fmt.Errorf("date '%s' is invalid. Must be in form: YYYY/mm/dd", date)
 			}
-			db, err := getDB()
+			db, _, err := getDB()
 			if err != nil {
 				return err
 			}

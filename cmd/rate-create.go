@@ -25,7 +25,7 @@ var rateCreateCmd = &cobra.Command{
 		fromSymbol, _ := cmd.Flags().GetString("from-symbol")
 		rate, _ := cmd.Flags().GetFloat64("rate")
 		fromSymbol = strings.ToUpper(fromSymbol)
-		db, err := getDB()
+		db, _, err := getDB()
 		if err != nil {
 			return err
 		}

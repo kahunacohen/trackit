@@ -24,7 +24,7 @@ var currencyCreateCmd = &cobra.Command{
 			return errors.New("currency symbol must be three characters")
 		}
 		symbol := strings.ToUpper(args[0])
-		db, err := getDB()
+		db, _, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

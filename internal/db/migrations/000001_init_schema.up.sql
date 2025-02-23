@@ -1,7 +1,3 @@
--- IMPORTANT: you must copy this file to cmd directory so that it can be
--- embedded in the go binary in order for the init command to also use it.
--- The Makefile does this for you, but if you change the schema.sql file in development,
--- you must manually copy it.
 CREATE TABLE IF NOT EXISTS settings (
     "name" TEXT UNIQUE NOT NULL,
     value TEXT NOT NULL
