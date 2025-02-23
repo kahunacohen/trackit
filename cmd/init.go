@@ -6,19 +6,16 @@ package cmd
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/golang-migrate/migrate/v4"
 	"github.com/kahunacohen/trackit/internal/config"
 	"github.com/kahunacohen/trackit/internal/models"
 	"golang.org/x/exp/maps"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file" // Add this!
-	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/mattes/migrate/source/file"
 
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
@@ -73,7 +70,7 @@ to point to where the trackit.db is.`,
 		}
 
 		logLn("parsed configuration file", verbose)
-		db, dsn, err := getDB()
+		db, err := getDB()
 		if err != nil {
 			return err
 		}
@@ -83,8 +80,6 @@ to point to where the trackit.db is.`,
 			return fmt.Errorf("error creating DB transaction: %w", err)
 		}
 		defer db.Close()
-
-		err = runMigrations(dsn)
 		if err != nil {
 			return fmt.Errorf("error running migrations: %w", err)
 		}
@@ -152,36 +147,6 @@ func init() {
 		"Specify the path to the trackit.yaml config file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
 }
-
-//go:embed migrations/*.sql
-var fss embed.FS
-
-func runMigrations(dsn string) error {
-	driver, err := iofs.New(fss, "migrations")
-	if err != nil {
-		return fmt.Errorf("error getting driver: %w", err)
-	}
-	m, err := migrate.NewWithSourceInstance("iofs", driver, dsn)
-
-	if err != nil {
-		return fmt.Errorf("error instantiating migration object: %w", err)
-	}
-	if err := m.Up(); err != nil && err.Error() != "no change" {
-		return fmt.Errorf("error migrating database: %w", err)
-	}
-	return nil
-}
-
-// Initialize the schema by embedding the schema file (which sqlc also uses)
-// and executing it. Because the embedded schema file will only work at the current
-// directory, not in the internal/db directory from this go module, the build process must
-// copies the schema.sql file to this directory.
-// func initSchema(db *sql.DB) error {
-// 	if _, err := db.Exec(schemaSQL); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
 
 func initAccounts(conf *config.Config, db *sql.DB) error {
 	for accountName := range conf.Accounts {

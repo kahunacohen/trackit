@@ -44,7 +44,7 @@ trackit categorize <id>`,
 				return fmt.Errorf("error parsing transaction id: %w", strconvErr)
 			}
 		}
-		db, _, err := getDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

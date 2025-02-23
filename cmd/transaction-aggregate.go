@@ -26,7 +26,7 @@ $ trackit aggregate --by account
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
 		by, _ := cmd.Flags().GetString("by")
-		db, _, err := getDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

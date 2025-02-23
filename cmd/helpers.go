@@ -2,6 +2,11 @@ package cmd
 
 import (
 	"database/sql"
+	"embed"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
+
 	"errors"
 	"fmt"
 	"math"
@@ -11,21 +16,23 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kahunacohen/trackit/internal/models"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func roundAmount(amount float64) float64 {
 	return math.Round(amount*100) / 100
 }
 
-func getDB() (*sql.DB, string, error) {
+func getDB() (*sql.DB, error) {
 	path, err := getDBPath()
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	if path == nil {
-		return nil, "", errors.New("path to database is nil")
+		return nil, errors.New("path to database is nil")
 	}
 	_, err = os.Stat(*path)
 	dbExists := !os.IsNotExist(err)
@@ -40,7 +47,28 @@ func getDB() (*sql.DB, string, error) {
 	}
 	logF(verbose, "opening database: %s", dsn)
 	db, err := sql.Open("sqlite3", dsn)
-	return db, fmt.Sprintf("sqlite3://%s", dsn), err
+	fullDsn := fmt.Sprintf("sqlite3://%s", dsn)
+	err = runMigrations(fullDsn)
+	return db, err
+}
+
+//go:embed migrations/*.sql
+var fss embed.FS
+
+func runMigrations(dsn string) error {
+	driver, err := iofs.New(fss, "migrations")
+	if err != nil {
+		return fmt.Errorf("error getting driver: %w", err)
+	}
+	m, err := migrate.NewWithSourceInstance("iofs", driver, dsn)
+
+	if err != nil {
+		return fmt.Errorf("error instantiating migration object: %w", err)
+	}
+	if err := m.Up(); err != nil && err.Error() != "no change" {
+		return fmt.Errorf("error migrating database: %w", err)
+	}
+	return nil
 }
 
 // Gets the path to the file we use to cache the path to the DB file (trackit.db).

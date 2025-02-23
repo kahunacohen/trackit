@@ -22,7 +22,7 @@ pass the --toggle flag along with --id. You can mark multiple transactions by pa
 		if len(ids) == 0 {
 			return fmt.Errorf("must specify at least one transaction id")
 		}
-		db, _, err := getDB()
+		db, err := getDB()
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}
