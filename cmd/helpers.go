@@ -40,7 +40,7 @@ func getDB() (*sql.DB, string, error) {
 	}
 	logF(verbose, "opening database: %s", dsn)
 	db, err := sql.Open("sqlite3", dsn)
-	return db, fmt.Sprintf("file://%s", dsn), err
+	return db, fmt.Sprintf("sqlite3://%s", dsn), err
 }
 
 // Gets the path to the file we use to cache the path to the DB file (trackit.db).

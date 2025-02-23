@@ -16,9 +16,10 @@ import (
 
 // currencyListCmd represents the currencyList command
 var currencyListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "Lists the currencies registered in the system",
-	Long:  `Lists the ISO 4217 currency symbols registered in the system.`,
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "Lists the currencies registered in the system",
+	Long:    `Lists the ISO 4217 currency symbols registered in the system.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		db, _, err := getDB()
 		if err != nil {

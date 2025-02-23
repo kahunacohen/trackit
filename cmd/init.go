@@ -155,8 +155,7 @@ func runMigrations(dsn string) error {
 	if err != nil {
 		return fmt.Errorf("error getting driver: %w", err)
 	}
-	fmt.Println(dsn)
-	m, err := migrate.NewWithSourceInstance("iofs", driver, "sqlite3:///home/aharonc/trackit-data/trackit.db")
+	m, err := migrate.NewWithSourceInstance("iofs", driver, dsn)
 
 	if err != nil {
 		return fmt.Errorf("error instantiating migration object: %w", err)
