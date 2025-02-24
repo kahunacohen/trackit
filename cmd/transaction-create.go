@@ -83,6 +83,6 @@ func init() {
 	transactionCreateCmd.Flags().StringP("description", "d", "", "description of transaction")
 	transactionCreateCmd.Flags().BoolP("ignore", "i", false, "whether to ignore amount when summing or aggregating")
 	transactionCreateCmd.Flags().Int64P("category-id", "t", 0, "an existing category ID. Do trackit categories list to see existing categories.")
-	transactionCreateCmd.Flags().StringP("date", "e", "", "Date in YYYY-MM format. For now, day precision is not implemented.")
+	transactionCreateCmd.Flags().StringP("date", "e", "", "Date in YYYY-MM-DD format")
 	transactionCmd.AddCommand(transactionCreateCmd)
 }
