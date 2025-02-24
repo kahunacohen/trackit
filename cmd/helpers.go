@@ -26,6 +26,9 @@ func roundAmount(amount float64) float64 {
 	return math.Round(amount*100) / 100
 }
 
+// getDB gets the sqlite db instance, opening it
+// with the proper DSN mode. It also migrates the
+// schema if new migrations are found.
 func getDB() (*sql.DB, error) {
 	path, err := getDBPath()
 	if err != nil {
