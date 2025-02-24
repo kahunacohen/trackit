@@ -81,7 +81,6 @@ func RenderAggregateTable(aggregates []models.AggregateTransactionsRow) {
 
 func getAccountTransactions(db *sql.DB, accountName string, date string) ([]models.TransactionsView, *float64, error) {
 	var transactions []models.TransactionsView
-	var err error
 	var total float64
 	queries := models.New(db)
 	// account and date are not set
@@ -90,7 +89,7 @@ func getAccountTransactions(db *sql.DB, accountName string, date string) ([]mode
 	// @TODO this is a bit messy, repeated code, etc. Maybe make a wrapper function
 	// that handles the distinct types but with same fields.
 	if accountName == "" && date == "" {
-		ts, _ := queries.ReadTransactionsWithSum(ctx)
+		ts, err := queries.ReadTransactionsWithSum(ctx)
 		if err != nil {
 			return nil, nil, err
 		}
