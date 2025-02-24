@@ -3,18 +3,20 @@
 meant for power-users (programmer types) who prefer working on the command-line over GUIs and prefer to avoid
 network traffic when managing personal financial data.
 
-Its main method of ingesting transaction records is by parsing and importing CSV files downloaded from your
-bank accounts into an embedded, file-based [sqlite](https://sqlite.org/) database, but it also allows you to manually
-manage transactions if need be.
+It's essentially a light wrapper over embedded SQLite (https://sqlite.org/)--a file-based database. SQLite behaves
+like other relational databases (e.g. MySQL, Postgres etc.) but is file-based instead of server-based.
+
+Its main method of ingesting transactions is by parsing and importing CSV files downloaded from your
+bank accounts, but it also allows you to manually manage transactions.
 
 ## Features
 - [x] **Cost**: free.
 - [x] **Cross-platform**: MacOS, Windows, Ubantu.
 - [x] **Entirely offline**: no internet connection needed, and thus, no inherent privacy concerns.
 - [x] **Multi-device**: leverages file-based database, so you are in charge of how
-   (or if you even want to) sync the `*.db` file across multiple devices.
+   (or if you even want to) sync the `trackit.db` file across multiple devices.
 - [x] **Flexible**: you can write custom queries against the auto-generated `trackit.db` sqlite file.
-- [x] **Performance**: It's all file-based and written in GO with embedded sqlite. It's fast.
+- [x] **Performance**: It's all file-based and written in GO. It's fast.
 - [x] **Multi currency**: yes!
 - [x] **Categorization**: tag transactions with built-in categories, or manage your own custom categories.
 - [x] **Ignore selected transactions**: Mark certain transactions ignored (such as transfers), so they don't get included in
@@ -70,12 +72,21 @@ accounts:
 
 Now run `trackit transaction import`. That should import all transactions from your CSV files.
 
+> [!WARNING]  
+> If you edit a CSV file once it's been imported, trackit will see it as a new file and re-import all its rows--causing
+> duplicate entries. The CSV files are meant to be an append-only log. Once imported, the files shouldn't be touched.
+
+> [!WARNING]  
+> Although you can query the trackit database all you like and even manually add entities using SQL, don't
+> modify the schema itself--that should only be managed by trackit. New versions of the trackit executable may
+> perform schema migrations that could alter the schema. Let trackit handle that.
+
 ## Manual Transactions
 You can manually add transactions (e.g. cash transactions) with `trackit transaction create`. See `trackit transaction create -h` for more.
 
 ## Multi-currency
 trackit supports multi-currency. Add a `base_currency` key in `trackit.yaml` and set the appropriate currency code
-for each account. E.g.
+for each account. Here's an example of a more involved `trackit.yaml` file with multi-currency:
 
 ```yaml
 base_currency: ILS # Israeli shekel
@@ -120,7 +131,7 @@ accounts:
         table: ~
 ```
 
-`trackit` includes commonly used currency symbols. See `trackit currency list`. If you need to add a currency,
+`trackit` comes populated with commonly used currency symbols. See `trackit currency list`. If you need to add a currency,
 do `trackit currency create`. 
 
 Now, for each month, get the average conversion rate and add it with `trackit rate create`.
@@ -140,14 +151,10 @@ make a transfer from one account to another. You might not want trackit to see t
 spending. See `trackit ignore`.
 
 ## Working across machines
-It's avisable to back up the `~/trackit-data` directory, as that's where all your CSV files are, `trackit.yaml` config file,
-and your `trackit.db` database file are. For example, you can put this in github (private repo).
+It's advisable to back up the `~/trackit-data` directory, as that's where (by default) all your CSV files, `trackit.yaml` config file, and your `trackit.db` database file are located. You could, for example, manage that directory as a github repo and push/pull
+it from multiple machines.
 
-If you want to work across multiple machines, simply ensure you have a synced version of `trackit-data` at `~/` or some
-other location. If it's at another location, you have to register the locations of the data directory (CSV files), the `trackit.yaml` file
-and the database file, `trackit.db` with the approprate flags to `trackit init`.
-
-Run `trackit init`.
+If one one machine the data directory is at another location, you have to register the location of the data directory (CSV files), the `trackit.yaml` file and the database file, `trackit.db` using `trackit init`.
 
 ## Custom queries/Syncing
 Because the data is stored in a relational sqlite db (in the trackit.db file), you can make custom
@@ -180,9 +187,6 @@ trackit categorize -h
   init every time we work across different machines.
   
 ### Features
-1. Migration stategy
-1. Autocomplete when categorizing
-1. Easy quit when categorizing
 1. Pre loop and create accounts before walking so we don't have to get the account ID
    in the middle of the transaction when walking.
 1. Add category when categorizing
@@ -190,5 +194,3 @@ trackit categorize -h
 1. Descriptions
 1. Search across categories
 1. Add unique constraint on name in accounts
-
-מסלול מורחב ?
