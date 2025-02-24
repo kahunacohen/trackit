@@ -3,8 +3,8 @@
 meant for power-users (programmer types) who prefer working on the command-line over GUIs and prefer to avoid
 network traffic when managing personal financial data.
 
-It's essentially a light wrapper over embedded SQLite (https://sqlite.org/)--a file-based database. SQLite behaves
-like other relational databases (e.g. MySQL, Postgres etc.) but is file-based instead of server-based.
+It's essentially a light wrapper over embedded [SQLite](https://sqlite.org/). SQLite is a fast, file-based database and behaves
+like other relational databases (e.g. MySQL, Postgres etc.).
 
 Its main method of ingesting transactions is by parsing and importing CSV files downloaded from your
 bank accounts, but it also allows you to manually manage transactions.
