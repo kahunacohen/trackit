@@ -20,13 +20,13 @@ SELECT COALESCE(category_name, 'uncategorized') AS category_name, SUM(amount) AS
 SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () AS total_amount FROM transactions_view ORDER BY "date" DESC;
 
 -- name: ReadTransactionsByAccountNameAndDateWithSum :many
-SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%Y-%m', "date") = ?;
+SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () AS total_amount FROM transactions_view WHERE account_name=? AND strftime('%Y-%m', "date") = ? ORDER BY "date" DESC;
 
 -- name: ReadTransactionsByAccountNameWithSum :many
-SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () AS total_amount  FROM transactions_view WHERE account_name=?;
+SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () AS total_amount  FROM transactions_view WHERE account_name=? ORDER BY "date" DESC;
 
 -- name: ReadTransactionsByDateWithSum :many
-SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () AS total_amount FROM transactions_view WHERE strftime('%Y-%m', "date") = ?;
+SELECT *, SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END) OVER () AS total_amount FROM transactions_view WHERE strftime('%Y-%m', "date") = ? ORDER BY "date" DESC;
 
 -- name: AggregateTransactions :many
 SELECT COALESCE(category_name, 'Uncategorized') AS category_name, ROUND(SUM(CASE WHEN NOT ignore_when_summing THEN amount ELSE 0 END), 2) AS total_amount FROM transactions_view WHERE ignore_when_summing = false GROUP BY category_name ORDER BY total_amount;
