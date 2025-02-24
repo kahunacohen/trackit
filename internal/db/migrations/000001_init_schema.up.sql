@@ -1,21 +1,17 @@
--- IMPORTANT: you must copy this file to cmd directory so that it can be
--- embedded in the go binary in order for the init command to also use it.
--- The Makefile does this for you, but if you change the schema.sql file in development,
--- you must manually copy it.
 CREATE TABLE IF NOT EXISTS settings (
-    "name" TEXT NOT NULL,
+    "name" TEXT UNIQUE NOT NULL,
     value TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    hash TEXT NOT NULL,
-    name TEXT NOT NULL
+    hash TEXT UNIQUE NOT NULL,
+    name TEXT UNIQUE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name TEXT UNIQUE NOT NULL,
     currency TEXT NOT NULL
 );
 
@@ -111,7 +107,6 @@ INSERT OR IGNORE INTO currency_codes (symbol) VALUES
     ('NZD'),
     ('USD');
 
-
 CREATE TABLE IF NOT EXISTS rates (
     id INTEGER PRIMARY KEY,
     rate NUMERIC NOT NULL,
@@ -120,7 +115,3 @@ CREATE TABLE IF NOT EXISTS rates (
     FOREIGN KEY (currency_code_from_id) REFERENCES currency_codes(id) ON DELETE CASCADE,
     CHECK (month LIKE '____-__' AND substr(month, 1, 4) BETWEEN '0000' AND '9999' AND substr(month, 6, 2) BETWEEN '01' AND '12')
 );
-INSERT OR IGNORE INTO rates (rate, currency_code_from_id, "month") VALUES
-    (3.75, 11, '2024-09'),
-    (3.75, 11, '2024-10'),
-    (3.75, 11, '2024-11');

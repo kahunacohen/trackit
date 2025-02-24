@@ -13,8 +13,8 @@ BUILD_DIR=./build
 DARWIN_DIR=$(BUILD_DIR)/darwin/amd64
 WINDOWS_DIR=$(BUILD_DIR)/windows/amd64
 UBANTU_X86_64_DIR=$(BUILD_DIR)/ubantu/x86_64
-SCHEMA_SRC=./internal/db/schema.sql
-SCHEMA_DEST=./cmd/schema.sql
+SCHEMA_SRC=./internal/db/migrations
+SCHEMA_DEST=./cmd/migrations
 
 # File paths
 MAIN_FILE=$(SRC_DIR)/main.go
@@ -34,8 +34,8 @@ sqlc-generate:
 # Copy schema.sql from internal/db to cmd/schema.sql
 .PHONY: copy-schema
 copy-schema:
-	@echo "Copying schema.sql from internal/db to cmd..."
-	cp $(SCHEMA_SRC) $(SCHEMA_DEST)
+	@echo "Copying migrations from internal/db to cmd..."
+	cp -r $(SCHEMA_SRC) $(SCHEMA_DEST)
 
 # Build the binary for macOS
 .PHONY: build

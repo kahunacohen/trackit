@@ -6,7 +6,6 @@ package cmd
 import (
 	"context"
 	"database/sql"
-	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -16,8 +15,12 @@ import (
 	"github.com/kahunacohen/trackit/internal/models"
 	"golang.org/x/exp/maps"
 
+	_ "github.com/golang-migrate/migrate/v4/source/file" // Add this!
+	_ "github.com/mattes/migrate/source/file"
+
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
-	_ "modernc.org/sqlite"
 )
 
 var initCmd = &cobra.Command{
@@ -72,16 +75,22 @@ to point to where the trackit.db is.`,
 			return err
 		}
 		logLn("created database", verbose)
-		defer db.Close()
-		if err = initSchema(db); err != nil {
-			return fmt.Errorf("error initializing database schema: %w", err)
+		tx, err := db.Begin()
+		if err != nil {
+			return fmt.Errorf("error creating DB transaction: %w", err)
 		}
-		logLn("initialized schema", verbose)
+		defer db.Close()
+		if err != nil {
+			return fmt.Errorf("error running migrations: %w", err)
+		}
+
+		logLn("migrated schema", verbose)
+		// @TODO pass tx
 		if err = initAccounts(conf, db); err != nil {
 			return fmt.Errorf("error initializing accounts: %w", err)
 		}
 
-		queries := models.New(db)
+		queries := models.New(tx)
 		ctx := context.Background()
 		_, err = queries.ReadSettingByName(ctx, "data-dir")
 		if err != nil {
@@ -93,20 +102,31 @@ to point to where the trackit.db is.`,
 			}
 		}
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("error setting data path: %w", err)
 		}
 		err = queries.CreateSetting(ctx,
 			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("error writing config-file path to db: %w", err)
 		}
 		logLn("initialized accounts", verbose)
 
-		if err = initCategories(conf, db); err != nil {
+		if err = initCategories(ctx, conf, queries); err != nil {
+			tx.Rollback()
 			return fmt.Errorf("error initializing categories: %w", err)
 		}
 		logLn("initialized categories", verbose)
+
+		if err := queries.CreateSetting(ctx, models.CreateSettingParams{Name: "version", Value: cmd.Version}); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("error setting version in DB: %w", err)
+		}
 		logLn("succesfully completed initialization", verbose)
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("error committing transaction: %w", err)
+		}
 		return nil
 	},
 }
@@ -123,20 +143,6 @@ func init() {
 	initCmd.Flags().StringP("config-file", "c", filepath.Join(homeDir, "trackit-data", "trackit.yaml"),
 		"Specify the path to the trackit.yaml config file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
-}
-
-//go:embed schema.sql
-var schemaSQL string
-
-// Initialize the schema by embedding the schema file (which sqlc also uses)
-// and executing it. Because the embedded schema file will only work at the current
-// directory, not in the internal/db directory from this go module, the build process must
-// copies the schema.sql file to this directory.
-func initSchema(db *sql.DB) error {
-	if _, err := db.Exec(schemaSQL); err != nil {
-		return err
-	}
-	return nil
 }
 
 func initAccounts(conf *config.Config, db *sql.DB) error {
@@ -159,21 +165,12 @@ func initAccounts(conf *config.Config, db *sql.DB) error {
 	return nil
 }
 
-func initCategories(conf *config.Config, db *sql.DB) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
+func initCategories(ctx context.Context, conf *config.Config, queries *models.Queries) error {
 	for _, category := range maps.Keys(conf.Categories) {
-		_, err := tx.Exec("INSERT INTO categories (name) VALUES (?)", category)
-		if err != nil {
-			tx.Rollback()
+		if err := queries.CreateCategory(ctx, category); err != nil {
 			return err
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		tx.Rollback()
-		return err
+
 	}
 	return nil
 }

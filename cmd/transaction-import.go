@@ -336,7 +336,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 }
 
 func getAccountNameFromFileName(conf *config.Config, fileName string) *string {
-	for k, _ := range conf.Accounts {
+	for k := range conf.Accounts {
 		if strings.Contains(fileName, k) {
 			return &k
 		}

@@ -174,6 +174,13 @@ trackit categorize -h
 ```
 
 ## TODO
+### Bugs
+* settings table is allowing multiple rows with same name, table should have a unique constraint.
+* This means you can have the wrong path to the config file. There needs to always be a check so that we don't have to call
+  init every time we work across different machines.
+  
+### Features
+1. Migration stategy
 1. Autocomplete when categorizing
 1. Easy quit when categorizing
 1. Pre loop and create accounts before walking so we don't have to get the account ID
