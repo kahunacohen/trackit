@@ -95,7 +95,6 @@ to point to where the trackit.db is.`,
 		_, err = queries.ReadSettingByName(ctx, "data-dir")
 		if err != nil {
 			if err == sql.ErrNoRows {
-				fmt.Println("create setting for data-dir")
 				// Only create setting if it doesn't already exist.
 				err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "data-dir", Value: dataPath})
 			} else {
@@ -108,8 +107,6 @@ to point to where the trackit.db is.`,
 		}
 		err = queries.CreateSetting(ctx,
 			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
-		fmt.Println("write config path")
-		fmt.Println(err)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("error writing config-file path to db: %w", err)

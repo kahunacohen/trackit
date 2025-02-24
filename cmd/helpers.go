@@ -47,6 +47,9 @@ func getDB() (*sql.DB, error) {
 	}
 	logF(verbose, "opening database: %s", dsn)
 	db, err := sql.Open("sqlite3", dsn)
+	if err != nil {
+		return nil, err
+	}
 	fullDsn := fmt.Sprintf("sqlite3://%s", dsn)
 	err = runMigrations(fullDsn)
 	return db, err
