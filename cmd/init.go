@@ -13,6 +13,7 @@ import (
 
 	"github.com/kahunacohen/trackit/internal/config"
 	"github.com/kahunacohen/trackit/internal/models"
+	"github.com/manifoldco/promptui"
 	"golang.org/x/exp/maps"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file" // Add this!
@@ -31,102 +32,104 @@ You should call trackit init when moving an existing database (trackit.db) to an
 the database file is in a different location than the default (~/trackit-data), then specify the -p flag
 to point to where the trackit.db is.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
-		dataPath, _ := cmd.Flags().GetString("data-path")
-		dataPath, err := filepath.Abs(dataPath)
-		if err != nil {
-			return fmt.Errorf("error getting absolute path of data directory")
-		}
+		generateTrackitYML()
 
-		dbFilePath, _ := cmd.Flags().GetString("db-path")
-		dbFilePath, err = filepath.Abs(dbFilePath)
-		if err != nil {
-			return fmt.Errorf("error getting absolute path for supplied db-path: %w", err)
-		}
+		// verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
+		// dataPath, _ := cmd.Flags().GetString("data-path")
+		// dataPath, err := filepath.Abs(dataPath)
+		// if err != nil {
+		// 	return fmt.Errorf("error getting absolute path of data directory")
+		// }
 
-		dbCachePath, err := getDBPathCache()
-		if err != nil {
-			return err
-		}
-		userConfigFile, err := os.OpenFile(dbCachePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-		if err != nil {
-			return fmt.Errorf("failed to open config file: %w", err)
-		}
-		defer userConfigFile.Close()
-		logF(verbose, "perisisting DB path at: %s with %s", dbCachePath, dbFilePath)
-		_, err = userConfigFile.WriteString(dbFilePath)
-		if err != nil {
-			return fmt.Errorf("failed to write db-path to config file: %w", err)
-		}
+		// dbFilePath, _ := cmd.Flags().GetString("db-path")
+		// dbFilePath, err = filepath.Abs(dbFilePath)
+		// if err != nil {
+		// 	return fmt.Errorf("error getting absolute path for supplied db-path: %w", err)
+		// }
 
-		configFilePath, _ := cmd.Flags().GetString("config-file")
-		configFilePath, err = filepath.Abs(configFilePath)
-		if err != nil {
-			return fmt.Errorf("error getting absolute path from passed config-file: %w", err)
-		}
-		conf, err := config.ParseConfig(configFilePath)
-		if err != nil {
-			return err
-		}
+		// dbCachePath, err := getDBPathCache()
+		// if err != nil {
+		// 	return err
+		// }
+		// userConfigFile, err := os.OpenFile(dbCachePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+		// if err != nil {
+		// 	return fmt.Errorf("failed to open config file: %w", err)
+		// }
+		// defer userConfigFile.Close()
+		// logF(verbose, "perisisting DB path at: %s with %s", dbCachePath, dbFilePath)
+		// _, err = userConfigFile.WriteString(dbFilePath)
+		// if err != nil {
+		// 	return fmt.Errorf("failed to write db-path to config file: %w", err)
+		// }
 
-		logLn("parsed configuration file", verbose)
-		db, err := getDB()
-		if err != nil {
-			return err
-		}
-		logLn("created database", verbose)
-		tx, err := db.Begin()
-		if err != nil {
-			return fmt.Errorf("error creating DB transaction: %w", err)
-		}
-		defer db.Close()
-		if err != nil {
-			return fmt.Errorf("error running migrations: %w", err)
-		}
+		// configFilePath, _ := cmd.Flags().GetString("config-file")
+		// configFilePath, err = filepath.Abs(configFilePath)
+		// if err != nil {
+		// 	return fmt.Errorf("error getting absolute path from passed config-file: %w", err)
+		// }
+		// conf, err := config.ParseConfig(configFilePath)
+		// if err != nil {
+		// 	return err
+		// }
 
-		logLn("migrated schema", verbose)
-		// @TODO pass tx
-		if err = initAccounts(conf, db); err != nil {
-			return fmt.Errorf("error initializing accounts: %w", err)
-		}
+		// logLn("parsed configuration file", verbose)
+		// db, err := getDB()
+		// if err != nil {
+		// 	return err
+		// }
+		// logLn("created database", verbose)
+		// tx, err := db.Begin()
+		// if err != nil {
+		// 	return fmt.Errorf("error creating DB transaction: %w", err)
+		// }
+		// defer db.Close()
+		// if err != nil {
+		// 	return fmt.Errorf("error running migrations: %w", err)
+		// }
 
-		queries := models.New(tx)
-		ctx := context.Background()
-		_, err = queries.ReadSettingByName(ctx, "data-dir")
-		if err != nil {
-			if err == sql.ErrNoRows {
-				// Only create setting if it doesn't already exist.
-				err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "data-dir", Value: dataPath})
-			} else {
-				return fmt.Errorf("error reading data-dir from settings")
-			}
-		}
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error setting data path: %w", err)
-		}
-		err = queries.CreateSetting(ctx,
-			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error writing config-file path to db: %w", err)
-		}
-		logLn("initialized accounts", verbose)
+		// logLn("migrated schema", verbose)
+		// // @TODO pass tx
+		// if err = initAccounts(conf, db); err != nil {
+		// 	return fmt.Errorf("error initializing accounts: %w", err)
+		// }
 
-		if err = initCategories(ctx, conf, queries); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error initializing categories: %w", err)
-		}
-		logLn("initialized categories", verbose)
+		// queries := models.New(tx)
+		// ctx := context.Background()
+		// _, err = queries.ReadSettingByName(ctx, "data-dir")
+		// if err != nil {
+		// 	if err == sql.ErrNoRows {
+		// 		// Only create setting if it doesn't already exist.
+		// 		err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "data-dir", Value: dataPath})
+		// 	} else {
+		// 		return fmt.Errorf("error reading data-dir from settings")
+		// 	}
+		// }
+		// if err != nil {
+		// 	tx.Rollback()
+		// 	return fmt.Errorf("error setting data path: %w", err)
+		// }
+		// err = queries.CreateSetting(ctx,
+		// 	models.CreateSettingParams{Name: "config-file", Value: configFilePath})
+		// if err != nil {
+		// 	tx.Rollback()
+		// 	return fmt.Errorf("error writing config-file path to db: %w", err)
+		// }
+		// logLn("initialized accounts", verbose)
 
-		if err := queries.CreateSetting(ctx, models.CreateSettingParams{Name: "version", Value: cmd.Version}); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error setting version in DB: %w", err)
-		}
-		logLn("succesfully completed initialization", verbose)
-		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("error committing transaction: %w", err)
-		}
+		// if err = initCategories(ctx, conf, queries); err != nil {
+		// 	tx.Rollback()
+		// 	return fmt.Errorf("error initializing categories: %w", err)
+		// }
+		// logLn("initialized categories", verbose)
+
+		// if err := queries.CreateSetting(ctx, models.CreateSettingParams{Name: "version", Value: cmd.Version}); err != nil {
+		// 	tx.Rollback()
+		// 	return fmt.Errorf("error setting version in DB: %w", err)
+		// }
+		// logLn("succesfully completed initialization", verbose)
+		// if err := tx.Commit(); err != nil {
+		// 	return fmt.Errorf("error committing transaction: %w", err)
+		// }
 		return nil
 	},
 }
@@ -143,6 +146,24 @@ func init() {
 	initCmd.Flags().StringP("config-file", "c", filepath.Join(homeDir, "trackit-data", "trackit.yaml"),
 		"Specify the path to the trackit.yaml config file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
+}
+
+func generateTrackitYML() error {
+	prompt := promptui.Prompt{
+		Label: "trackit.yaml path?",
+	}
+	ymlPath, err := prompt.Run()
+
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return err
+	}
+	ymlPath, err = filepath.Abs(ymlPath)
+	fmt.Println(ymlPath)
+	if err != nil {
+		return fmt.Errorf("error making yaml path absolute: %w", err)
+	}
+	return nil
 }
 
 func initAccounts(conf *config.Config, db *sql.DB) error {
