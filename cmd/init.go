@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/kahunacohen/trackit/internal/config"
 	"github.com/kahunacohen/trackit/internal/models"
@@ -148,9 +149,20 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 }
 
+func normalizePath(path string) (string, error) {
+	if strings.HasPrefix(path, "~") {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		path = filepath.Join(homeDir, path[1:])
+	}
+	return filepath.Abs(path)
+}
+
 func generateTrackitYML() error {
 	prompt := promptui.Prompt{
-		Label: "trackit.yaml path?",
+		Label: "new trackit.yaml path",
 	}
 	ymlPath, err := prompt.Run()
 
@@ -158,11 +170,11 @@ func generateTrackitYML() error {
 		fmt.Printf("Prompt failed %v\n", err)
 		return err
 	}
-	ymlPath, err = filepath.Abs(ymlPath)
-	fmt.Println(ymlPath)
+	ymlPath, err = normalizePath(ymlPath)
 	if err != nil {
 		return fmt.Errorf("error making yaml path absolute: %w", err)
 	}
+
 	return nil
 }
 
