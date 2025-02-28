@@ -33,7 +33,10 @@ You should call trackit init when moving an existing database (trackit.db) to an
 the database file is in a different location than the default (~/trackit-data), then specify the -p flag
 to point to where the trackit.db is.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generateTrackitYML()
+		err := generateTrackitYML()
+		if err != nil {
+			return err
+		}
 
 		// verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
 		// dataPath, _ := cmd.Flags().GetString("data-path")
@@ -161,8 +164,9 @@ func normalizePath(path string) (string, error) {
 }
 
 func generateTrackitYML() error {
+	conf := config.Config{}
 	prompt := promptui.Prompt{
-		Label: "new trackit.yaml path",
+		Label: "existing directory to put new trackit config",
 	}
 	ymlPath, err := prompt.Run()
 
@@ -173,6 +177,24 @@ func generateTrackitYML() error {
 	ymlPath, err = normalizePath(ymlPath)
 	if err != nil {
 		return fmt.Errorf("error making yaml path absolute: %w", err)
+	}
+	stat, err := os.Stat(ymlPath)
+	if err == nil && stat.IsDir() {
+
+	} else {
+		return fmt.Errorf("%s is doesn't exist or is not a directory", ymlPath)
+	}
+
+	prompt = promptui.Prompt{
+		Label: "base currency (USD, ILS etc.)",
+	}
+	baseCurrency, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+	conf.BaseCurrency = baseCurrency
+	if err := conf.WriteToYaml(); err != nil {
+		return err
 	}
 
 	return nil

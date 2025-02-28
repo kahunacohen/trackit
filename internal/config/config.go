@@ -59,3 +59,8 @@ func (c *Config) Headers(accountName string) []string {
 	}
 	return ret
 }
+
+func (c *Config) WriteToYaml() error {
+	fmt.Println("write")
+	return nil
+}
