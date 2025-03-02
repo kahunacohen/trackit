@@ -60,7 +60,10 @@ func (c *Config) Headers(accountName string) []string {
 	return ret
 }
 
-func (c *Config) WriteToYaml() error {
-	fmt.Println("write")
-	return nil
+func (c *Config) WriteToYaml() (string, error) {
+	yamlBytes, err := yaml.Marshal(c)
+	if err != nil {
+		return "", fmt.Errorf("error marshalling config to yaml: %w", err)
+	}
+	return string(yamlBytes), nil
 }

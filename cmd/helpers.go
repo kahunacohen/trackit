@@ -180,3 +180,7 @@ func accountKeyToName(account sql.NullString) string {
 	}
 	return strings.Title(name)
 }
+
+func accountNameToKey(account string) string {
+	return strings.ToLower(strings.ReplaceAll(account, " ", "_"))
+}

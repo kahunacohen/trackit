@@ -192,10 +192,28 @@ func generateTrackitYML() error {
 	if err != nil {
 		return err
 	}
-	conf.BaseCurrency = baseCurrency
-	if err := conf.WriteToYaml(); err != nil {
-		return err
+	if len(baseCurrency) != 3 {
+		return fmt.Errorf("base currency must be 3 characters")
 	}
+	baseCurrency = strings.ToUpper(baseCurrency)
+	conf.BaseCurrency = baseCurrency
+	accountsMap := make(map[string]config.Account)
+
+	for {
+		prompt = promptui.Prompt{
+			Label: "Name of account  (e.g. Bank of America). Press ENTER when done",
+		}
+		accountName, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		if accountName == "" {
+			break
+		}
+		accountsMap[accountNameToKey(accountName)] = config.Account{}
+		conf.Accounts = accountsMap
+	}
+	fmt.Println(conf.WriteToYaml())
 
 	return nil
 }
