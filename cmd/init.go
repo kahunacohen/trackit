@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/kahunacohen/trackit/internal/config"
@@ -166,7 +167,7 @@ func normalizePath(path string) (string, error) {
 func generateTrackitYML() error {
 	conf := config.Config{}
 	prompt := promptui.Prompt{
-		Label: "existing directory to put new trackit config",
+		Label: "Enter an existing directory to save the config file (trackit.yaml) to",
 	}
 	ymlPath, err := prompt.Run()
 
@@ -186,7 +187,7 @@ func generateTrackitYML() error {
 	}
 
 	prompt = promptui.Prompt{
-		Label: "base currency (USD, ILS etc.)",
+		Label: "Enter a base currency (USD, ILS etc.). This is the currency all transactions should be converted to.",
 	}
 	baseCurrency, err := prompt.Run()
 	if err != nil {
@@ -201,7 +202,7 @@ func generateTrackitYML() error {
 
 	for {
 		prompt = promptui.Prompt{
-			Label: "Name of account  (e.g. Bank of America). Press ENTER when done",
+			Label: "Enter the name of an account  (e.g. Bank of America).",
 		}
 		accountName, err := prompt.Run()
 		if err != nil {
@@ -210,14 +211,41 @@ func generateTrackitYML() error {
 		if accountName == "" {
 			break
 		}
-		accountsMap[accountNameToKey(accountName)] = config.Account{}
+		prompt = promptui.Prompt{Label: "Enter the date format for this account (e.g., mm-dd-yyyy, yyyy/mm/dd"}
+		dateFormat, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		dateFormat = tokenToGoDate(dateFormat)
+
+		prompt = promptui.Prompt{Label: "Enter thousands separator for this account (e.g. what character is used to separate thousands place). Enter ~ for none."}
+		sep, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		accountsMap[accountNameToKey(accountName)] = config.Account{ThousandsSeparator: sep}
 		conf.Accounts = accountsMap
 	}
 	fmt.Println(conf.WriteToYaml())
 
 	return nil
 }
-
+func tokenToGoDate(s string) string {
+	re := regexp.MustCompile(`(?P<month>m{1,2})|(?P<day>d{1,2})|(?P<year>y{2,4})`)
+	s = strings.ToLower(s)
+	matches := re.FindAllStringSubmatch(s, -1)
+	parts := make(map[string]string)
+	for _, match := range matches {
+		for i, name := range re.SubexpNames() {
+			if i != 0 && match[i] != "" { // Ignore empty matches
+				parts[name] = match[i]
+			}
+		}
+	}
+	ret := ""
+	fmt.Println(parts)
+	return ret
+}
 func initAccounts(conf *config.Config, db *sql.DB) error {
 	for accountName := range conf.Accounts {
 		// Does the account exist already? If not, insert it
