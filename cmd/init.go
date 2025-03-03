@@ -216,7 +216,8 @@ func generateTrackitYML() error {
 		if err != nil {
 			return err
 		}
-		dateFormat = tokenToGoDate(dateFormat)
+		dateFormat = dateTokenToGoFormat(dateFormat)
+		fmt.Println(dateFormat)
 
 		prompt = promptui.Prompt{Label: "Enter thousands separator for this account (e.g. what character is used to separate thousands place). Enter ~ for none."}
 		sep, err := prompt.Run()
@@ -230,20 +231,38 @@ func generateTrackitYML() error {
 
 	return nil
 }
-func tokenToGoDate(s string) string {
+func dateTokenToGoFormat(dateToken string) string {
 	re := regexp.MustCompile(`(?P<month>m{1,2})|(?P<day>d{1,2})|(?P<year>y{2,4})`)
-	s = strings.ToLower(s)
-	matches := re.FindAllStringSubmatch(s, -1)
-	parts := make(map[string]string)
+	dateToken = strings.ToLower(dateToken)
+	matches := re.FindAllStringSubmatch(dateToken, -1)
+	ret := ""
 	for _, match := range matches {
 		for i, name := range re.SubexpNames() {
 			if i != 0 && match[i] != "" { // Ignore empty matches
-				parts[name] = match[i]
+				switch name {
+				case "month":
+					if len(match[i]) == 2 {
+						ret += "01"
+					} else {
+						ret += "1"
+					}
+				case "day":
+					if len(match[i]) == 2 {
+						ret += "02"
+					} else {
+						ret += "2"
+					}
+				case "year":
+					if len(match[i]) == 4 {
+						ret += "2006"
+					} else if len(match[i]) == 2 {
+						ret += "06"
+					}
+				}
 			}
 		}
 	}
-	ret := ""
-	fmt.Println(parts)
+
 	return ret
 }
 func initAccounts(conf *config.Config, db *sql.DB) error {
