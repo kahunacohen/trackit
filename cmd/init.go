@@ -232,7 +232,10 @@ func generateTrackitYML() error {
 	return nil
 }
 func dateTokenToGoFormat(dateToken string) string {
-	re := regexp.MustCompile(`(?P<month>m{1,2})|(?P<day>d{1,2})|(?P<year>y{2,4})`)
+	// re := regexp.MustCompile(`(?P<month>m{1,2})|(?P<day>d{1,2})|(?P<year>y{2,4})`)
+	//
+	re := regexp.MustCompile(`(?P<month>m{1,2})(?P<month_sep>\D)|(?P<day>d{1,2})(?P<day_sep>\D)|(?P<year>y{2,4}\D)`)
+
 	dateToken = strings.ToLower(dateToken)
 	matches := re.FindAllStringSubmatch(dateToken, -1)
 	ret := ""
