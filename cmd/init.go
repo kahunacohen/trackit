@@ -210,25 +210,46 @@ func generateTrackitYML() error {
 		if accountName == "" {
 			break
 		}
-		prompt = promptui.Prompt{Label: "Enter the date format for this account (e.g., mm-dd-yyyy, yyyy/mm/dd"}
+		prompt = promptui.Prompt{Label: "Enter the date format this account uses (e.g., \"mm-dd-yyyy\", \"yyyy/mm/dd\""}
 		dateLayout, err := prompt.Run()
 		if err != nil {
 			return err
 		}
-		dateLayout = dateTokenToGoFormat(dateLayout)
+
+		prompt = promptui.Prompt{Label: "Enter the currency for this account (e.g. USD, ILS etc.)"}
+		bankAccountCurrency, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+
+		prompt = promptui.Prompt{Label: "Enter whether debits are shown as positive (y/n). Default is \"n\"."}
+		var debitAsPositiveBool bool
+		debitAsPositive, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+		debitAsPositive = strings.ToLower(debitAsPositive)
+		if debitAsPositive == "y" || debitAsPositive == "yes" {
+			debitAsPositiveBool = true
+		}
 
 		prompt = promptui.Prompt{Label: "Enter thousands separator for this account (e.g. what character is used to separate thousands place). Enter ~ for none."}
 		sep, err := prompt.Run()
 		if err != nil {
 			return err
 		}
-		accountsMap[accountNameToKey(accountName)] = config.Account{ThousandsSeparator: sep, DateLayout: dateLayout}
+		accountsMap[accountNameToKey(accountName)] = config.Account{
+			Currency:           bankAccountCurrency,
+			DateLayout:         dateLayout,
+			DebitAsPositive:    debitAsPositiveBool,
+			ThousandsSeparator: sep}
 		conf.Accounts = accountsMap
 	}
 	fmt.Println(conf.WriteToYaml())
 
 	return nil
 }
+
 func dateTokenToGoFormat(dateToken string) string {
 	format := strings.ToLower(dateToken)
 	format = strings.ReplaceAll(format, "yyyy", "2006")

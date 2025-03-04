@@ -141,31 +141,10 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("file %s has no records", path)
 			}
 			headersInConfig := conf.Headers(accountNameFromFile)
-			dateLayout := accountFromConf.DateLayout
+			dateLayout := dateTokenToGoFormat(accountFromConf.DateLayout)
 			colIndices := accountsToColIndices[accountNameFromFile]
 			bankAccountCurrency := accountFromConf.Currency
 
-			// Insert bank account name into db if it doesn't exist. @TODO put a unique constraint
-			// on account.name then we can use IGNORE in sqlite.
-			// _, err = txQueries.ReadAccountIdByName(ctx, accountNameFromFile)
-			// if err != nil {
-			// 	if err == sql.ErrNoRows {
-			// 		// Account doesn't exist so create it.
-			// 		if err := txQueries.CreateAccountIfNotExists(ctx, accountNameFromFile); err != nil {
-			// 			tx.Rollback()
-			// 			return fmt.Errorf("error creating account name %s in db: %w", accountNameFromFile, err)
-			// 		}
-			// 		logF(verbose, "creating new account in DB: %s", accountNameFromFile)
-			// 	} else {
-			// 		tx.Rollback()
-			// 		return fmt.Errorf("error trying to get account name %s: %w", accountNameFromFile, err)
-			// 	}
-			// }
-
-			// if err := txQueries.CreateAccountIfNotExists(ctx, accountNameFromFile); err != nil {
-			// 	tx.Rollback()
-			// 	return fmt.Errorf("error creating account name %s in db: %w", accountNameFromFile, err)
-			// }
 			for _, headerInConfig := range headersInConfig {
 				if !slices.Contains(headersInFile, headerInConfig) {
 					tx.Rollback()
