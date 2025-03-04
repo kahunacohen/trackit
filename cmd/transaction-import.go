@@ -107,7 +107,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 				return fmt.Errorf("error beginning db transaction when inserting transactions: %w", err)
 			}
 			txQueries := models.New(tx)
-			hashFromDb, err := txQueries.ReadHashFromFileName(ctx, path)
+			hashFromDb, err := txQueries.ReadHashFromFileName(ctx, fileName)
 			if err != nil && err != sql.ErrNoRows {
 				tx.Rollback()
 				return fmt.Errorf("error looking up hash from db for %s: %v", path, err)
@@ -235,7 +235,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 						if err != nil {
 							if err == sql.ErrNoRows {
 								tx.Rollback()
-								return fmt.Errorf(`no rate defined from %s to %s for month: %s, file: %s Create curency
+								return fmt.Errorf(`no rate defined from %s to %s for month: %s, file: %s Create currency
 (trackit currency create) and rate (trackit rate create) to define a conversion rate for this month`, bankAccountCurrency, conf.BaseCurrency, normalizedTransactionDate, path)
 							} else {
 								tx.Rollback()
@@ -309,13 +309,13 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 			} // end iteration of data rows in file
 			if hashFromDb == "" {
 				logF(verbose, "file %s had never been processed, insert hash to db\n", path)
-				if err := txQueries.CreateFile(ctx, models.CreateFileParams{Name: path, Hash: fileHash}); err != nil {
+				if err := txQueries.CreateFile(ctx, models.CreateFileParams{Name: fileName, Hash: fileHash}); err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting initial file hash: %w", err)
 				}
 			} else {
 				logF(verbose, "file %s changed, update hash\n", path)
-				err = txQueries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: path})
+				err = txQueries.UpdateFileHashByName(ctx, models.UpdateFileHashByNameParams{Hash: fileHash, Name: fileName})
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error updating file hash for file: %s: %w", path, err)
