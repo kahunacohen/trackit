@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/kahunacohen/trackit/internal/config"
@@ -212,19 +211,18 @@ func generateTrackitYML() error {
 			break
 		}
 		prompt = promptui.Prompt{Label: "Enter the date format for this account (e.g., mm-dd-yyyy, yyyy/mm/dd"}
-		dateFormat, err := prompt.Run()
+		dateLayout, err := prompt.Run()
 		if err != nil {
 			return err
 		}
-		dateFormat = dateTokenToGoFormat(dateFormat)
-		fmt.Println(dateFormat)
+		dateLayout = dateTokenToGoFormat(dateLayout)
 
 		prompt = promptui.Prompt{Label: "Enter thousands separator for this account (e.g. what character is used to separate thousands place). Enter ~ for none."}
 		sep, err := prompt.Run()
 		if err != nil {
 			return err
 		}
-		accountsMap[accountNameToKey(accountName)] = config.Account{ThousandsSeparator: sep}
+		accountsMap[accountNameToKey(accountName)] = config.Account{ThousandsSeparator: sep, DateLayout: dateLayout}
 		conf.Accounts = accountsMap
 	}
 	fmt.Println(conf.WriteToYaml())
@@ -232,42 +230,14 @@ func generateTrackitYML() error {
 	return nil
 }
 func dateTokenToGoFormat(dateToken string) string {
-	// re := regexp.MustCompile(`(?P<month>m{1,2})|(?P<day>d{1,2})|(?P<year>y{2,4})`)
-	//
-	re := regexp.MustCompile(`(?P<month>m{1,2})(?P<month_sep>\D)|(?P<day>d{1,2})(?P<day_sep>\D)|(?P<year>y{2,4}\D)`)
-
-	dateToken = strings.ToLower(dateToken)
-	matches := re.FindAllStringSubmatch(dateToken, -1)
-	ret := ""
-	for _, match := range matches {
-		for i, name := range re.SubexpNames() {
-			if i != 0 && match[i] != "" { // Ignore empty matches
-				switch name {
-				case "month":
-					if len(match[i]) == 2 {
-						ret += "01"
-					} else {
-						ret += "1"
-					}
-				case "day":
-					if len(match[i]) == 2 {
-						ret += "02"
-					} else {
-						ret += "2"
-					}
-				case "year":
-					if len(match[i]) == 4 {
-						ret += "2006"
-					} else if len(match[i]) == 2 {
-						ret += "06"
-					}
-				}
-			}
-		}
-	}
-
-	return ret
+	format := strings.ToLower(dateToken)
+	format = strings.ReplaceAll(format, "yyyy", "2006")
+	format = strings.ReplaceAll(format, "yy", "06")
+	format = strings.ReplaceAll(format, "mm", "01")
+	format = strings.ReplaceAll(format, "dd", "02")
+	return format
 }
+
 func initAccounts(conf *config.Config, db *sql.DB) error {
 	for accountName := range conf.Accounts {
 		// Does the account exist already? If not, insert it
