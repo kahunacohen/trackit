@@ -4,7 +4,6 @@ Copyright © 2024 Aaron Cohen <aaroncohendev@gmail.com>
 package cmd
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -13,9 +12,7 @@ import (
 	"strings"
 
 	"github.com/kahunacohen/trackit/internal/config"
-	"github.com/kahunacohen/trackit/internal/models"
 	"github.com/manifoldco/promptui"
-	"golang.org/x/exp/maps"
 
 	_ "github.com/golang-migrate/migrate/v4/source/file" // Add this!
 	_ "github.com/mattes/migrate/source/file"
@@ -166,7 +163,7 @@ func normalizePath(path string) (string, error) {
 func generateTrackitYML() error {
 	conf := config.Config{}
 	prompt := promptui.Prompt{
-		Label: "Enter an existing directory to save the config file (trackit.yaml) to",
+		Label: "Enter an existing directory to save the config file to (e.g. ~/trackit-data)",
 	}
 	ymlPath, err := prompt.Run()
 
@@ -186,7 +183,7 @@ func generateTrackitYML() error {
 	}
 
 	prompt = promptui.Prompt{
-		Label: "Enter a base currency (USD, ILS etc.). This is the currency all transactions should be converted to.",
+		Label: "Enter a base currency (USD, ILS etc). This is the currency all transactions should be converted to.",
 	}
 	baseCurrency, err := prompt.Run()
 	if err != nil {
@@ -201,16 +198,16 @@ func generateTrackitYML() error {
 
 	for {
 		prompt = promptui.Prompt{
-			Label: "Enter the name of an account  (e.g. Bank of America).",
+			Label: "Enter the name of an account  (e.g. Bank of America). Type q if you have no more to add.",
 		}
 		accountName, err := prompt.Run()
 		if err != nil {
 			return err
 		}
-		if accountName == "" {
+		if strings.ToLower(accountName) == "q" {
 			break
 		}
-		prompt = promptui.Prompt{Label: "Enter the date format this account uses (e.g., \"mm-dd-yyyy\", \"yyyy/mm/dd\""}
+		prompt = promptui.Prompt{Label: "Enter the date format this account uses in downloaded CSV files (e.g., \"mm-dd-yyyy\", \"yyyy/mm/dd\""}
 		dateLayout, err := prompt.Run()
 		if err != nil {
 			return err
@@ -222,7 +219,7 @@ func generateTrackitYML() error {
 			return err
 		}
 
-		prompt = promptui.Prompt{Label: "Enter whether debits are shown as positive (y/n). Default is \"n\"."}
+		prompt = promptui.Prompt{Label: "Enter whether debits are positive or negative numbers in downloaded CSV files (y/n). Default is \"n\"."}
 		var debitAsPositiveBool bool
 		debitAsPositive, err := prompt.Run()
 		if err != nil {
@@ -233,7 +230,7 @@ func generateTrackitYML() error {
 			debitAsPositiveBool = true
 		}
 
-		prompt = promptui.Prompt{Label: "Enter thousands separator for this account (e.g. what character is used to separate thousands place). Enter ~ for none."}
+		prompt = promptui.Prompt{Label: "Enter thousands separator used in downloaded CSV files (e.g. \",\") Enter ~ for none."}
 		sep, err := prompt.Run()
 		if err != nil {
 			return err
@@ -245,7 +242,7 @@ func generateTrackitYML() error {
 			ThousandsSeparator: sep}
 		conf.Accounts = accountsMap
 	}
-	fmt.Println(conf.WriteToYaml())
+	conf.WriteToYaml()
 
 	return nil
 }
@@ -275,16 +272,6 @@ func initAccounts(conf *config.Config, db *sql.DB) error {
 				return err
 			}
 		}
-	}
-	return nil
-}
-
-func initCategories(ctx context.Context, conf *config.Config, queries *models.Queries) error {
-	for _, category := range maps.Keys(conf.Categories) {
-		if err := queries.CreateCategory(ctx, category); err != nil {
-			return err
-		}
-
 	}
 	return nil
 }

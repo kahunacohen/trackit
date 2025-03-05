@@ -14,7 +14,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -258,19 +257,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					tx.Rollback()
 					return fmt.Errorf("error getting bank account ID for %s: %w", accountNameFromFile, err)
 				}
-				categoryName, err := getCategory(conf, counterParty)
-				if err != nil {
-					tx.Rollback()
-					return fmt.Errorf("error getting category: %w", err)
-				}
-				var categoryId int64
-				if categoryName != nil {
-					categoryId, err = txQueries.ReadCategoryIdByName(ctx, *categoryName)
-					if err != nil {
-						tx.Rollback()
-						return fmt.Errorf("error getting category ID: %w", err)
-					}
-				}
+
 				if accountFromConf.DebitAsPositive {
 					amount = -amount
 				}
@@ -279,8 +266,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					AccountID:    sql.NullInt64{Valid: true, Int64: bankAccountId},
 					Date:         date.Format("2006-01-02"),
 					Amount:       amount,
-					CounterParty: counterParty,
-					CategoryID:   toNullInt64(&categoryId)})
+					CounterParty: counterParty})
 				if err != nil {
 					tx.Rollback()
 					return fmt.Errorf("error inserting transaction: %w", err)
@@ -345,22 +331,6 @@ func computeFileHash(file *os.File) (string, error) {
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
-func getCategory(conf *config.Config, counterParty string) (*string, error) {
-	for categoryName, counterParties := range conf.Categories {
-		for _, regexpStr := range counterParties {
-			// @TODO In efficent to compile so many times...
-			re, err := regexp.Compile(regexpStr)
-			if err != nil {
-				return nil, fmt.Errorf("error getting category: %w", err)
-			}
-			if re.MatchString(counterParty) {
-				return &categoryName, nil
-			}
-		}
-	}
-	return nil, nil
-}
-
 type ExchangeRate struct {
 	From string  `json:"from"`
 	To   string  `json:"to"`
@@ -383,12 +353,4 @@ func parseAmount(amount string, thousandsSeparator string) (*float64, error) {
 		return nil, err
 	}
 	return &ret, nil
-}
-
-func toNullInt64(val *int64) sql.NullInt64 {
-	if val != nil {
-		return sql.NullInt64{Int64: *val, Valid: true}
-	} else {
-		return sql.NullInt64{Valid: false}
-	}
 }

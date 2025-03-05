@@ -15,9 +15,8 @@ type Account struct {
 	ThousandsSeparator string              `yaml:"thousands_separator"`
 }
 type Config struct {
-	Accounts     map[string]Account  `yaml:"accounts"`
-	BaseCurrency string              `yaml:"base_currency"`
-	Categories   map[string][]string `yaml:"categories"`
+	Accounts     map[string]Account `yaml:"accounts"`
+	BaseCurrency string             `yaml:"base_currency"`
 }
 
 func ParseConfig(path string) (*Config, error) {
