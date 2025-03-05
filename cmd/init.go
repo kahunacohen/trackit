@@ -198,7 +198,7 @@ func generateTrackitYML() error {
 
 	for {
 		prompt = promptui.Prompt{
-			Label: "Enter the name of an account  (e.g. Bank of America). Type q if you have no more to add.",
+			Label: "Enter the name of an account  (e.g. Bank of America). Type q if you have no more to add",
 		}
 		accountName, err := prompt.Run()
 		if err != nil {
@@ -219,7 +219,7 @@ func generateTrackitYML() error {
 			return err
 		}
 
-		prompt = promptui.Prompt{Label: "Enter whether debits are positive or negative numbers in downloaded CSV files (y/n). Default is \"n\"."}
+		prompt = promptui.Prompt{Label: "Enter whether debits are positive or negative numbers in downloaded CSV files (y/n). Default is \"n\""}
 		var debitAsPositiveBool bool
 		debitAsPositive, err := prompt.Run()
 		if err != nil {
@@ -230,19 +230,38 @@ func generateTrackitYML() error {
 			debitAsPositiveBool = true
 		}
 
-		prompt = promptui.Prompt{Label: "Enter thousands separator used in downloaded CSV files (e.g. \",\") Enter ~ for none."}
+		prompt = promptui.Prompt{Label: "Enter thousands separator used in downloaded CSV files (e.g. \",\") Enter ~ for none"}
 		sep, err := prompt.Run()
 		if err != nil {
 			return err
+		}
+		var quit bool
+		var headers []map[string]string
+		for {
+			prompt = promptui.Prompt{Label: fmt.Sprintf("Enter a CSV column name for bank account %s. Enter q to quit", accountName)}
+			colName, err := prompt.Run()
+			if err != nil {
+				return err
+			}
+			if strings.ToLower(colName) == "q" {
+				quit = true
+				break
+			}
+			headers = append(headers, map[string]string{colName: "~"})
 		}
 		accountsMap[accountNameToKey(accountName)] = config.Account{
 			Currency:           bankAccountCurrency,
 			DateLayout:         dateLayout,
 			DebitAsPositive:    debitAsPositiveBool,
-			ThousandsSeparator: sep}
+			ThousandsSeparator: sep,
+			Headers:            headers}
 		conf.Accounts = accountsMap
+		if quit {
+			continue
+		}
 	}
-	conf.WriteToYaml()
+
+	fmt.Println(conf.WriteToYaml())
 
 	return nil
 }
