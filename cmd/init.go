@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -207,19 +208,19 @@ func generateTrackitYML() error {
 		if strings.ToLower(accountName) == "q" {
 			break
 		}
-		prompt = promptui.Prompt{Label: "Enter the date format this account uses in downloaded CSV files (e.g., \"mm-dd-yyyy\", \"yyyy/mm/dd\""}
+		prompt = promptui.Prompt{Label: fmt.Sprintf("Enter the date format used in CSV files downloaded from '%s' (e.g., 'MM-DD-YYYY', 'YYYY/MM/DD').", accountName)}
 		dateLayout, err := prompt.Run()
 		if err != nil {
 			return err
 		}
 
-		prompt = promptui.Prompt{Label: "Enter the currency for this account (e.g. USD, ILS etc.)"}
+		prompt = promptui.Prompt{Label: fmt.Sprintf("Enter the currency used in the %s account (e.g., USD, ILS, etc.).", accountName)}
 		bankAccountCurrency, err := prompt.Run()
 		if err != nil {
 			return err
 		}
 
-		prompt = promptui.Prompt{Label: "Enter whether debits are positive or negative numbers in downloaded CSV files (y/n). Default is \"n\""}
+		prompt = promptui.Prompt{Label: fmt.Sprintf("Are debits represented as positive numbers in the downloaded CSV files for %s? (y/n, default: n)", accountName)}
 		var debitAsPositiveBool bool
 		debitAsPositive, err := prompt.Run()
 		if err != nil {
@@ -230,7 +231,7 @@ func generateTrackitYML() error {
 			debitAsPositiveBool = true
 		}
 
-		prompt = promptui.Prompt{Label: "Enter thousands separator used in downloaded CSV files (e.g. \",\") Enter ~ for none"}
+		prompt = promptui.Prompt{Label: fmt.Sprintf("Enter the thousands separator used in the downloaded CSV files from %s (e.g., ','). Enter '~' for none", accountName)}
 		sep, err := prompt.Run()
 		if err != nil {
 			return err
@@ -238,7 +239,7 @@ func generateTrackitYML() error {
 		var quit bool
 		var headers []map[string]string
 		for {
-			prompt = promptui.Prompt{Label: fmt.Sprintf("Enter a CSV column name for bank account %s. Enter q to quit", accountName)}
+			prompt = promptui.Prompt{Label: fmt.Sprintf("Enter a CSV column name for %s. Enter q to quit", accountName)}
 			colName, err := prompt.Run()
 			if err != nil {
 				return err
@@ -247,7 +248,15 @@ func generateTrackitYML() error {
 				quit = true
 				break
 			}
-			headers = append(headers, map[string]string{colName: "~"})
+			prompt = promptui.Prompt{Label: fmt.Sprintf("Enter a trackit table name for column %s (transaction_date, counter_party, amount, withdrawl, or deposit)", colName)}
+			tableName, err := prompt.Run()
+			if err != nil {
+				return err
+			}
+			if tableName != "transaction_date" && tableName != "counter_party" && tableName != "amount" && tableName != "deposit" && tableName != "withdrawl" && tableName != "~" {
+				return errors.New("must enter a valid trackit table name")
+			}
+			headers = append(headers, map[string]string{colName: tableName})
 		}
 		accountsMap[accountNameToKey(accountName)] = config.Account{
 			Currency:           bankAccountCurrency,
