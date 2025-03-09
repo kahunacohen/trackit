@@ -202,12 +202,18 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 						return fmt.Errorf("must define a withdrawl and deposit column for: %s", path)
 					}
 					depositStr := row[depositIndx]
+					if depositStr == "" {
+						depositStr = "0"
+					}
 					parsedDeposit, err := parseAmount(depositStr, thousandsSeparator)
 					if err != nil {
 						tx.Rollback()
 						return fmt.Errorf("error parsing deposit amount %s in %s", depositStr, path)
 					}
 					withdrawlStr := row[withdrawlIndx]
+					if withdrawlStr == "" {
+						withdrawlStr = "0"
+					}
 					parsedWithdrawl, err := parseAmount(withdrawlStr, thousandsSeparator)
 					if err != nil {
 						tx.Rollback()
