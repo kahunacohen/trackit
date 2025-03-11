@@ -189,7 +189,7 @@ func processFiles(conf *config.Config, db *sql.DB) error {
 					parsedAmount, err := parseAmount(amountStr, thousandsSeparator)
 					if err != nil {
 						tx.Rollback()
-						return fmt.Errorf("error parsing amount: %s", amountStr)
+						return fmt.Errorf("error parsing amount: %s: %w", amountStr, err)
 					}
 					if parsedAmount == nil {
 						tx.Rollback()
@@ -405,7 +405,7 @@ func parseAmount(amount string, thousandsSeparator string) (*float64, error) {
 	} else {
 		amountStr = amount
 	}
-	ret, err := strconv.ParseFloat(amountStr, 64)
+	ret, err := strconv.ParseFloat(strings.TrimSpace(amountStr), 64)
 	if err != nil {
 		return nil, err
 	}
