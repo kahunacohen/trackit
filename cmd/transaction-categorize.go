@@ -19,6 +19,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const skipText = "Skip categorizing this transaction"
+
 var categoryNames []string
 
 var transactionCategorizeCmd = &cobra.Command{
@@ -60,6 +62,7 @@ trackit categorize <id>`,
 		for _, category := range categories {
 			categoryMap[category.Name] = category.ID
 		}
+		categoryNames = append(categoryNames, skipText)
 		for _, category := range categories {
 			categoryNames = append(categoryNames, category.Name)
 		}
@@ -93,6 +96,9 @@ trackit categorize <id>`,
 				_, categoryNameResult, err := prompt.Run()
 				if err != nil {
 					return fmt.Errorf("prompt failed %w", err)
+				}
+				if categoryNameResult == skipText {
+					continue
 				}
 				err = queries.UpdateTransactionCategory(ctx, models.UpdateTransactionCategoryParams{
 					CategoryID: sql.NullInt64{Valid: true, Int64: categoryMap[categoryNameResult]},
