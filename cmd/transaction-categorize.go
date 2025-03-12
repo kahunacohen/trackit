@@ -91,7 +91,7 @@ trackit categorize <id>`,
 					Label:             t.Render(),
 					Items:             categoryNames,
 					StartInSearchMode: true,
-					Searcher:          seacher,
+					Searcher:          searcher,
 				}
 				_, categoryNameResult, err := prompt.Run()
 				if err != nil {
@@ -119,9 +119,10 @@ trackit categorize <id>`,
 			t.AppendHeader(table.Row{"Date", "Account", "Payee", "Amount"})
 			t.AppendRow([]interface{}{transaction.Date, transaction.AccountName.String, transaction.CounterParty, fmt.Sprintf("%.2f", transaction.Amount)})
 			prompt := promptui.Select{
-				Label:    t.Render(),
-				Items:    categoryNames,
-				Searcher: seacher,
+				Label:             t.Render(),
+				Items:             categoryNames,
+				StartInSearchMode: true,
+				Searcher:          searcher,
 			}
 			_, categoryNameResult, err := prompt.Run()
 			if err != nil {
@@ -142,6 +143,6 @@ func init() {
 	transactionCmd.AddCommand(transactionCategorizeCmd)
 }
 
-func seacher(input string, i int) bool {
+func searcher(input string, i int) bool {
 	return strings.Contains(strings.ToLower(categoryNames[i]), strings.ToLower(input))
 }
