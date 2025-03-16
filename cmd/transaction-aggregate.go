@@ -16,6 +16,7 @@ import (
 
 var transactionAggregateCmd = &cobra.Command{
 	Use:   "aggregate",
+    Aliases: []string{"aggr"},
 	Short: "Aggregates transactions by some facet, reporting total amount (default is category)",
 	Long: `Aggregates transactions by some facet (default is category): E.g.
 	
