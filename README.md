@@ -6,7 +6,7 @@ network traffic when managing personal financial data.
 It's essentially a light wrapper over embedded [SQLite](https://sqlite.org/). SQLite is a fast, file-based database and behaves
 like other relational databases (e.g. MySQL, Postgres etc.).
 
-Its main method of ingesting transactions is by parsing and importing CSV files downloaded from your
+trackit's main method of ingesting transactions is by parsing and importing CSV files downloaded from your
 bank accounts, but it also allows you to manually manage transactions.
 
 ## Features
@@ -26,9 +26,11 @@ bank accounts, but it also allows you to manually manage transactions.
 1. [Download](https://github.com/kahunacohen/trackit/releases/) the correct version of trackit for your operating system (under `assets`).
 1. Unzip the zip file.
 1. Put the `trackit` executable in your path.
-1. The data directory (the directory where `trackit` imports CSV files from) is, by default, at `~/trackit-data`.
-   Create that directory, if it doesn't exist. You can change the default data directory if you want it to be somewhere else
-   on your filesystem. See `trackit init -h`.
+1. Create the following directory in  your home directory (`mkdir $HOME/trackit-dir` for Linux/MacOS, or `mkdir %USERPROFILE%\trackit-data
+` in Windows). This is where your monthly bank statements in CSV will go and where your
+   config file, `trackit.yaml` will go. It's also where SQlite database file (`trackit.db`) will be written to.
+1. Set the environment variable `TRACKIT_DATA` to the path to the directory you just created. In Linux/MacOS, put `export TRACKIT_DATA=$HOME/trackit-data`
+   in your `.bashrc` or `.zshrc` file. In Windows run `setx TRACKIT_DATA "%USERPROFILE%\trackit-data"` to set the enviroment variable permanently. 
 1. Download monthly transactions from your bank in CSV format and put them into your data directory. You can organize the 
    files however you like in that directory, **as long as the name of the file contains the bank account key** somewhere in the file name. The bank account key is the name of the bank account with underscores that you set in the `trackit.yaml` file below. For example if one of your bank account keys
    is `bank_of_america`, you can name the file `bank_of_america_transactions.csv`, as long as **bank_of_america** is a substring
