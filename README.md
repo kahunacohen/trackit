@@ -28,7 +28,7 @@ bank accounts, but it also allows you to manually manage transactions.
 1. Put the `trackit` executable in your path.
 1. Create the following directory in  your home directory (`mkdir $HOME/trackit-dir` for Linux/MacOS, or `mkdir %USERPROFILE%\trackit-data
 ` in Windows). This is where your monthly CSV bank statements will go and where your
-   config file, `trackit.yaml` will go. It's also where SQlite database file (`trackit.db`) will be written to.
+   config file, `trackit.yaml` will go. It's also where the SQlite database file (`trackit.db`) will be written to.
 1. Set the environment variable `TRACKIT_DATA` to the path to the directory you just created. In Linux/MacOS, put `export TRACKIT_DATA=$HOME/trackit-data`
    in your `.bashrc` or `.zshrc` file. In Windows run `setx TRACKIT_DATA "%USERPROFILE%\trackit-data"` to set the enviroment variable permanently. 
 1. Download monthly transactions from your bank in CSV format and put them into your data directory. You can organize the 
