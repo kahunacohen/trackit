@@ -34,7 +34,11 @@ var transactionImportCmd = &cobra.Command{
 not parse files whose transactions that already have been added and will ignore non-CSV files.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

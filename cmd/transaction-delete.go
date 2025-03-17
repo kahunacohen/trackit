@@ -19,7 +19,11 @@ var transactionDeleteCmd = &cobra.Command{
 	Short:   "deletes a transaction",
 	Long:    `deletes a transaction by ID. trackit transaction delete <id>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			return err
 		}

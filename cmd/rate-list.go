@@ -21,7 +21,11 @@ var rateListCmd = &cobra.Command{
 	Long:    `Lists the the conversion rates. trackit rate list`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		month, _ := cmd.Flags().GetString("month")
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			return err
 		}

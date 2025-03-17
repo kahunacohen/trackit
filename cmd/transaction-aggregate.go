@@ -15,9 +15,9 @@ import (
 )
 
 var transactionAggregateCmd = &cobra.Command{
-	Use:   "aggregate",
-    Aliases: []string{"aggr"},
-	Short: "Aggregates transactions by some facet, reporting total amount (default is category)",
+	Use:     "aggregate",
+	Aliases: []string{"aggr"},
+	Short:   "Aggregates transactions by some facet, reporting total amount (default is category)",
 	Long: `Aggregates transactions by some facet (default is category): E.g.
 	
 $ trackit aggregate
@@ -27,7 +27,11 @@ $ trackit aggregate --by account
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
 		by, _ := cmd.Flags().GetString("by")
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

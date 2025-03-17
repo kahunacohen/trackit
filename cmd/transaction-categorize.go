@@ -46,7 +46,11 @@ trackit categorize <id>`,
 				return fmt.Errorf("error parsing transaction id: %w", strconvErr)
 			}
 		}
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

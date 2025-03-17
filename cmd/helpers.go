@@ -7,11 +7,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 
-	"errors"
 	"fmt"
 	"math"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -29,24 +27,17 @@ func roundAmount(amount float64) float64 {
 // getDB gets the sqlite db instance, opening it
 // with the proper DSN mode. It also migrates the
 // schema if new migrations are found.
-func getDB() (*sql.DB, error) {
-	path, err := getDBPath()
-	if err != nil {
-		return nil, err
-	}
-	if path == nil {
-		return nil, errors.New("path to database is nil")
-	}
-	_, err = os.Stat(*path)
+func getDB(dbPath string) (*sql.DB, error) {
+	_, err := os.Stat(dbPath)
 	dbExists := !os.IsNotExist(err)
 	var dsn string
 	if dbExists {
 		logLn("database already exists", verbose)
-		dsn = fmt.Sprintf("%s?mode=rw", *path)
+		dsn = fmt.Sprintf("%s?mode=rw", dbPath)
 
 	} else {
 		logLn("database does not exist", verbose)
-		dsn = fmt.Sprintf("%s?mode=rw&create=true", *path)
+		dsn = fmt.Sprintf("%s?mode=rw&create=true", dbPath)
 	}
 	logF(verbose, "opening database: %s", dsn)
 	db, err := sql.Open("sqlite3", dsn)
@@ -75,31 +66,6 @@ func runMigrations(dsn string) error {
 		return fmt.Errorf("error migrating database: %w", err)
 	}
 	return nil
-}
-
-// Gets the path to the file we use to cache the path to the DB file (trackit.db).
-// This file is created and read because of the "bootstrapping problem". You can't store
-// the path to the database itself in the database.
-func getDBPathCache() (string, error) {
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		return "", fmt.Errorf("can't get user config dir: %w", err)
-	}
-	return filepath.Join(userConfigDir, "trackit", "db-path"), nil
-
-}
-
-func getDBPath() (*string, error) {
-	cachePath, err := getDBPathCache()
-	if err != nil {
-		return nil, fmt.Errorf("error getting cache file to db path: %w", err)
-	}
-	bytes, err := os.ReadFile(cachePath)
-	if err != nil {
-		return nil, fmt.Errorf("error reading %s: %w", cachePath, err)
-	}
-	s := string(bytes)
-	return &s, nil
 }
 
 func renderTransactionTable(rows []models.TransactionsView, total *float64) error {

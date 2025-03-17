@@ -21,7 +21,11 @@ var currencyListCmd = &cobra.Command{
 	Short:   "Lists the currencies registered in the system",
 	Long:    `Lists the ISO 4217 currency symbols registered in the system.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

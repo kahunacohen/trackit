@@ -25,7 +25,11 @@ var currencyUpdateCmd = &cobra.Command{
 		if len(fromCurr) != 3 || len(toCurr) != 3 {
 			return errors.New("from and to currency must have three letter length")
 		}
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

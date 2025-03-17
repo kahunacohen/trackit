@@ -19,7 +19,11 @@ var categoryCreateCmd = &cobra.Command{
 	Short:   "Creates a category. categories add <name>",
 	Long:    `Creates a category, taking one positional argument (category name). categories add <name>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

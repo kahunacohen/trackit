@@ -6,8 +6,8 @@ package cmd
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -32,43 +32,17 @@ the database file is in a different location than the default (~/trackit-data), 
 to point to where the trackit.db is.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
-		dataPath, _ := cmd.Flags().GetString("data-path")
-		dataPath, err := filepath.Abs(dataPath)
-		if err != nil {
-			return fmt.Errorf("error getting absolute path of data directory")
-		}
-
-		dbFilePath, _ := cmd.Flags().GetString("db-path")
-		dbFilePath, err = filepath.Abs(dbFilePath)
-		if err != nil {
-			return fmt.Errorf("error getting absolute path for supplied db-path: %w", err)
-		}
-
-		dbCachePath, err := getDBPathCache()
+		dataPath, configPath, dbPath, err := getDataPaths()
 		if err != nil {
 			return err
 		}
-		userConfigFile, err := os.OpenFile(dbCachePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-		if err != nil {
-			return fmt.Errorf("failed to open config file: %w", err)
-		}
-		defer userConfigFile.Close()
-		logF(verbose, "perisisting DB path at: %s with %s", dbCachePath, dbFilePath)
-		_, err = userConfigFile.WriteString(dbFilePath)
-		if err != nil {
-			return fmt.Errorf("failed to write db-path to config file: %w", err)
-		}
-		if err != nil {
-			return fmt.Errorf("error getting absolute path from passed config-file: %w", err)
-		}
-		configFilepath := filepath.Join(dataPath, "trackit.yaml")
-		conf, err := config.ParseConfig(configFilepath)
+		conf, err := config.ParseConfig(configPath)
 		if err != nil {
 			return err
 		}
 
 		logLn("parsed configuration file", verbose)
-		db, err := getDB()
+		db, err := getDB(dbPath)
 		if err != nil {
 			return err
 		}
@@ -103,12 +77,6 @@ to point to where the trackit.db is.`,
 			tx.Rollback()
 			return fmt.Errorf("error setting data path: %w", err)
 		}
-		err = queries.CreateSetting(ctx,
-			models.CreateSettingParams{Name: "config-file", Value: configFilepath})
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error writing config-file path to db: %w", err)
-		}
 		logLn("initialized accounts", verbose)
 
 		if err = initCategories(ctx, conf, queries); err != nil {
@@ -130,17 +98,23 @@ to point to where the trackit.db is.`,
 }
 
 func init() {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatalf("error getting home directory: %v", err)
-	}
-	initCmd.Flags().StringP("data-path", "d", filepath.Join(homeDir, "trackit-data"),
-		"Specify the desired path to the directory holding the downloaded CSVs.")
-	initCmd.Flags().StringP("db-path", "p", filepath.Join(homeDir, "trackit-data", "trackit.db"),
-		"Specify the desired path to the trackit.db (sqlite) database file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
 }
 
+// Returns a triplet of trackit data dir, trackit.yaml, and trackit.db
+func getDataPaths() (string, string, string, error) {
+	dirPath := os.Getenv("TRACKIT_DATA")
+	if dirPath == "" {
+		return "", "", "", errors.New("must set TRACKIT_DATA environment variable, where your trackit.yaml and account CSV files are")
+	}
+	dirPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		return "", "", "", fmt.Errorf("error getting data paths: %w", err)
+	}
+	configPath := filepath.Join(dirPath, "trackit.yaml")
+	dbPath := filepath.Join("trackit.db")
+	return dirPath, configPath, dbPath, nil
+}
 func initAccounts(conf *config.Config, db *sql.DB) error {
 	for accountName := range conf.Accounts {
 		// Does the account exist already? If not, insert it

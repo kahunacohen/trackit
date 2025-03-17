@@ -18,7 +18,11 @@ var currencyDeleteCmd = &cobra.Command{
 	Short: "Deletes a currency symbol by name",
 	Long:  `Deletes a currency symbol by name. trackit currency delete ILS`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			log.Fatalf("Failed to open database: %v", err)
 		}

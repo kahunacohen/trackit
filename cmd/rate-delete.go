@@ -23,7 +23,11 @@ Delete a rate: trackit delete <id>`,
 		if err != nil {
 			return errors.New("could not parse argument as a rate ID")
 		}
-		db, err := getDB()
+		_, _, dbPath, err := getDataPaths()
+		if err != nil {
+			return err
+		}
+		db, err := getDB(dbPath)
 		if err != nil {
 			return err
 		}
