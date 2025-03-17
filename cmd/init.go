@@ -105,14 +105,14 @@ func init() {
 func getDataPaths() (string, string, string, error) {
 	dirPath := os.Getenv("TRACKIT_DATA")
 	if dirPath == "" {
-		return "", "", "", errors.New("must set TRACKIT_DATA environment variable, where your trackit.yaml and account CSV files are")
+		return "", "", "", errors.New("must set TRACKIT_DATA environment variable to where your trackit.yaml and account CSV files are")
 	}
 	dirPath, err := filepath.Abs(dirPath)
 	if err != nil {
 		return "", "", "", fmt.Errorf("error getting data paths: %w", err)
 	}
 	configPath := filepath.Join(dirPath, "trackit.yaml")
-	dbPath := filepath.Join("trackit.db")
+	dbPath := filepath.Join(dirPath, "trackit.db")
 	return dirPath, configPath, dbPath, nil
 }
 func initAccounts(conf *config.Config, db *sql.DB) error {
