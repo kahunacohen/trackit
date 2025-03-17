@@ -58,13 +58,11 @@ to point to where the trackit.db is.`,
 		if err != nil {
 			return fmt.Errorf("failed to write db-path to config file: %w", err)
 		}
-
-		configFilePath, _ := cmd.Flags().GetString("config-file")
-		configFilePath, err = filepath.Abs(configFilePath)
 		if err != nil {
 			return fmt.Errorf("error getting absolute path from passed config-file: %w", err)
 		}
-		conf, err := config.ParseConfig(configFilePath)
+		configFilepath := filepath.Join(dataPath, "trackit.yaml")
+		conf, err := config.ParseConfig(configFilepath)
 		if err != nil {
 			return err
 		}
@@ -106,7 +104,7 @@ to point to where the trackit.db is.`,
 			return fmt.Errorf("error setting data path: %w", err)
 		}
 		err = queries.CreateSetting(ctx,
-			models.CreateSettingParams{Name: "config-file", Value: configFilePath})
+			models.CreateSettingParams{Name: "config-file", Value: configFilepath})
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("error writing config-file path to db: %w", err)
@@ -140,8 +138,6 @@ func init() {
 		"Specify the desired path to the directory holding the downloaded CSVs.")
 	initCmd.Flags().StringP("db-path", "p", filepath.Join(homeDir, "trackit-data", "trackit.db"),
 		"Specify the desired path to the trackit.db (sqlite) database file, including the name of the file")
-	initCmd.Flags().StringP("config-file", "c", filepath.Join(homeDir, "trackit-data", "trackit.yaml"),
-		"Specify the path to the trackit.yaml config file, including the name of the file")
 	rootCmd.AddCommand(initCmd)
 }
 
