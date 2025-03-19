@@ -46,7 +46,8 @@ bank accounts, but it also allows you to manually manage transactions.
 1. Download monthly transactions from your bank in CSV format and put them into your data directory. You can organize the 
    files however you like in that directory, **as long as the name of the file contains the bank account key** somewhere in the file name. The bank account key is the name of the bank account with underscores that you set in the `trackit.yaml` file below. For example if one of your bank account keys
    is `bank_of_america`, you can name the file `bank_of_america_transactions.csv`, as long as **bank_of_america** is a substring
-   of the filename.
+   of the file name. **Note**: trackit can only import transactions from CSV files that are well-formed. Some banks will, unfortunately, download badly-formed CSV files. For example
+   data rows may have unescaped quotes. It's your responsiblity to ensure the CSV files are clean, otherwise trackit will fail to import.
 1. Create a `trackit.yaml` configuration file. By default it will be `~/trackit-data/trackit.yaml`, but you can set a custom location.
    See `trackit init -h`. In your `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
    
