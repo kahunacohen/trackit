@@ -28,18 +28,16 @@ bank accounts, but it also allows you to manually manage transactions.
 1. Put the `trackit` executable in your path. You may be warned that it's not a trusted app on the Mac or Windows platform. I don't want to pay
    to be an Apple developer, so using the app is at your own risk. See [here](https://support.apple.com/en-il/guide/mac-help/mh40616/mac) if you want to override security settings and use it anyway.
    See [here](https://support.garmin.com/en-US/?faq=IWKKPZkMLD6dxzny6ksCK9) for windows.
-1. Create the directory where trackit data will be stored (e.g. the trackit database file, the trackit.yaml config file and
-   the downloaded monthly bank CSV files). For example create the directory like this: 
+1. Create the directory where trackit data will be stored. This is the directory where the `trackit.db` (the SQLite db file) database file, the trackit.yaml config file and
+   your downloaded monthly CSV files will be stored. You can create this directory in your home directory:
    
    ```
+   # Linux/MacOS
    mkdir $HOME/trackit-dir
-   ```
-   for Linux/MacOS, or 
-   
-   ```
+
+   # Windows
    mkdir %USERPROFILE%\trackit-data
-   ``` 
-   for Windows. 
+   ```
 
    You can create this directory anywhere you want and name it what you want, as long as it matches the environment
    variable you will set below. But in most cases, creating it at `$HOME/trackit-data` suffices.
