@@ -42,7 +42,7 @@ bank accounts, but it also allows you to manually manage transactions.
    You can create this directory anywhere you want and name it what you want, as long as it matches the environment
    variable you will set below. But in most cases, creating it at `$HOME/trackit-data` suffices.
 1. Set the environment variable `TRACKIT_DATA` to the directory path you just created. In Linux/MacOS, put `export TRACKIT_DATA=$HOME/trackit-data`
-   in your `.bashrc` or `.zshrc` file. In Windows run `setx TRACKIT_DATA "%USERPROFILE%\trackit-data"` to set the enviroment variable permanently. 
+   in your `.bashrc` or `.zshrc` file--then make sure to source it (`source ~/.bashrc`). In Windows run `setx TRACKIT_DATA "%USERPROFILE%\trackit-data"` to set the enviroment variable permanently. 
 1. Download monthly transactions from your bank in CSV format and put them into your data directory. You can organize the 
    files however you like in that directory, **as long as the name of the file contains the bank account key** somewhere in the file name. The bank account key is the name of the bank account with underscores that you set in the `trackit.yaml` file below. For example if one of your bank account keys
    is `bank_of_america`, you can name the file `bank_of_america_transactions.csv`, as long as **bank_of_america** is a substring
