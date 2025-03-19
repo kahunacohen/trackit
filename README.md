@@ -27,6 +27,7 @@ bank accounts, but it also allows you to manually manage transactions.
 1. Unzip the zip file.
 1. Put the `trackit` executable in your path. You may be warned that it's not a trusted app on the Mac or Windows platform. I don't want to pay
    to be an Apple developer, so using the app is at your own risk. See [here](https://support.apple.com/en-il/guide/mac-help/mh40616/mac) if you want to override security settings and use it anyway.
+   See [here](https://support.garmin.com/en-US/?faq=IWKKPZkMLD6dxzny6ksCK9) for windows.
 1. Create the directory where trackit data will be stored (e.g. the trackit database file, the trackit.yaml config file and
    the downloaded monthly bank CSV files). For example create the directory like this: 
    
