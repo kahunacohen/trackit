@@ -48,24 +48,21 @@ bank accounts, but it also allows you to manually manage transactions.
    is `bank_of_america`, you can name the file `bank_of_america_transactions.csv`, as long as **bank_of_america** is a substring
    of the file name. **Note**: trackit can only import transactions from CSV files that are well-formed. Some banks will, unfortunately, download badly-formed CSV files. For example
    data rows may have unescaped quotes. It's your responsiblity to ensure the CSV files are clean, otherwise trackit will fail to import.
-1. Create a `trackit.yaml` configuration file. By default it will be `~/trackit-data/trackit.yaml`, but you can set a custom location.
-   See `trackit init -h`. In your `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
+1. Create a `trackit.yaml` configuration file and put it in your trackit data directory you created earlier. 
+   In your `trackit.yaml` file, map each CSV heading for each account to one of the three required trackit database tables. These tables are:
    
    * `transaction_date`
    * `counter_party`
    * `amount`
 
-If a header in the CSV file doesn't map to any table, set the table to: `~`. Here's an example `trackit.yaml` configuration file:
+If a header in the CSV file doesn't map to any table, set the table to: `~`. Here's a simple, example `trackit.yaml` configuration file:
 
 ```yaml
 accounts:
   bank_of_america: # this is the one of the bank acount keys: bank_of_america
 
     # the date reference layout for this account's CSV.
-    # The reference date is Jan 1 2006. The entry below means
-    # that in the bank_of_america CSV files, the dates are formatted
-    # like:  mm/dd/yyyy.
-    date_layout: 01/02/2006
+    date_layout: mm/dd/yyyy
 
     # These are the headers of the bank_of_america CSV file
     headers:
