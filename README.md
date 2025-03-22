@@ -64,7 +64,8 @@ accounts:
     # the date reference layout for this account's CSV.
     date_layout: mm/dd/yyyy
 
-    # These are the headers of the bank_of_america CSV file
+    # These are the column headers of the bank_of_america CSV file, each mapped to the trackit database
+    # tables.
     headers:
       - name: Posted Date # This is the CSV column header for the bank_of_america.csv file
         table: transaction_date # This is the trackit database table it maps to
@@ -86,12 +87,12 @@ Now run `trackit transaction import`. That should import all transactions from y
 
 > [!WARNING]  
 > If you edit a CSV file once it's been imported, trackit will see it as a new file and re-import all its rows--causing
-> duplicate entries. The CSV files are meant to be an append-only log. Once imported, the files shouldn't be touched.
+> duplicate entries. The CSV files are not meant to be altered after importing.
 
 > [!WARNING]  
-> Although you can query the trackit database all you like and even manually add entities using SQL, don't
+> Although you can query the trackit SQLite database, and even manually add entities using SQL, don't
 > modify the schema itself--that should only be managed by trackit. New versions of the trackit executable may
-> perform schema migrations that could alter the schema. Let trackit handle that.
+> perform schema migrations that could alter the schema.
 
 ## Manual Transactions
 You can manually add transactions (e.g. cash transactions) with `trackit transaction create`. See `trackit transaction create -h` for more.
@@ -104,7 +105,7 @@ for each account. Here's an example of a more involved `trackit.yaml` file with 
 base_currency: ILS # Israeli shekel
 accounts:
   bank_of_america:
-    date_layout: 01/02/2006
+    date_layout: dd/mm/yyyy
     currency: USD # Bank of America uses US dollars.
     headers:
       - name: Posted Date
@@ -117,10 +118,10 @@ accounts:
         table: ~
       - name: Amount
         table: amount
-  leumi_checking:
+  leumi_checking: # Here's a second account
     thousands_separator: ","
     currency: ILS
-    date_layout: 02/01/2006
+    date_layout: dd/mm/yyy
     headers:
       - name: date
         table: transaction_date
@@ -132,7 +133,7 @@ accounts:
         table: ~
 
       # if the CSV file has separate withdrawl fields and deposit fields (instead of one amount field),
-      # then map them to deposit/withdrawl table instead of one amount table.
+      # then map them to deposit/withdrawl tables instead of one amount table. E.g.:
       - name: withdrawl 
         table: withdrawl
       - name: deposit
@@ -146,7 +147,7 @@ accounts:
 `trackit` comes populated with commonly used currency symbols. See `trackit currency list`. If you need to add a currency,
 do `trackit currency create`. 
 
-Now, for each month, get the average conversion rate and add it with `trackit rate create`.
+Now, for each month, get the average conversion rate (perhaps look online) and add it with `trackit rate create`.
 
 ## Separate deposit/withdrawl fields
 Some downloaded CSV transaction rows have an amount field that is positive (deposits) or negative (withdrawls). Other
@@ -160,17 +161,15 @@ aggregating by other facets is not implemented. But you can run custom SQL queri
 ## Ignoring transactions
 Sometimes you might want to mark a transaction to ignore for summing or aggregation purposes. Say, for example, you
 make a transfer from one account to another. You might not want trackit to see that as a debit or credit to your overall
-spending. See `trackit ignore`.
+spending. See `trackit transaction ignore`.
 
 ## Working across machines
-It's advisable to back up the `~/trackit-data` directory, as that's where (by default) all your CSV files, `trackit.yaml` config file, and your `trackit.db` database file are located. You could, for example, manage that directory as a github repo and push/pull
+It's advisable to back up the `~/trackit-data` directory, as that's where your CSV files, `trackit.yaml` config file, and your `trackit.db` database file are located. You could, for example, manage that directory as a github repo and push/pull
 it from multiple machines.
 
-If one one machine the data directory is at another location, you have to register the location of the data directory (CSV files), the `trackit.yaml` file and the database file, `trackit.db` using `trackit init`.
-
 ## Custom queries/Syncing
-Because the data is stored in a relational sqlite db (in the trackit.db file), you can make custom
-queries against the database. For now you must install sqlite on your platform. Then do:
+Because the data is stored in a relational SQLite db (in the trackit.db file), you can make custom
+queries against the database. For now you must install sqlite on your platform (if it's not already). Then do:
 
 ```
 sqlite3 ~/trackit.db
@@ -191,18 +190,3 @@ trackit init -h
 trackit categorize -h
 # etc.
 ```
-
-## TODO
-### Bugs
-* settings table is allowing multiple rows with same name, table should have a unique constraint.
-* This means you can have the wrong path to the config file. There needs to always be a check so that we don't have to call
-  init every time we work across different machines.
-  
-### Features
-1. Pre loop and create accounts before walking so we don't have to get the account ID
-   in the middle of the transaction when walking.
-1. Add category when categorizing
-1. Tagging
-1. Descriptions
-1. Search across categories
-1. Add unique constraint on name in accounts
