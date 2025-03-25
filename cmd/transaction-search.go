@@ -23,7 +23,7 @@ trackit search <text>`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date, _ := cmd.Flags().GetString("date")
 		account, _ := cmd.Flags().GetString("account")
-		_, _, dbPath, err := getDataPaths()
+		_, configPath, dbPath, err := getDataPaths()
 		if err != nil {
 			return err
 		}
@@ -41,10 +41,6 @@ trackit search <text>`,
 			}
 		}
 		if account != "" {
-			configPath, err := queries.ReadSettingByName(context.Background(), "config-file")
-			if err != nil {
-				return fmt.Errorf("error getting config-file path from db: %w", err)
-			}
 			conf, err := config.ParseConfig(configPath)
 			if err != nil {
 				return fmt.Errorf("error parsing config: %v", err)

@@ -34,7 +34,7 @@ var transactionImportCmd = &cobra.Command{
 not parse files whose transactions that already have been added and will ignore non-CSV files.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
-		_, _, dbPath, err := getDataPaths()
+		_, configPath, dbPath, err := getDataPaths()
 		if err != nil {
 			return err
 		}
@@ -43,11 +43,6 @@ not parse files whose transactions that already have been added and will ignore 
 			log.Fatalf("Failed to open database: %v", err)
 		}
 		defer db.Close()
-		queries := models.New(db)
-		configPath, err := queries.ReadSettingByName(context.Background(), "config-file")
-		if err != nil {
-			return fmt.Errorf("error getting config-file path from db: %w", err)
-		}
 
 		conf, err := config.ParseConfig(configPath)
 		if err != nil {
@@ -73,12 +68,11 @@ type rateCacheKey struct {
 var exchangeRateCache = make(map[rateCacheKey]float64)
 
 func processFiles(conf *config.Config, db *sql.DB) error {
-	dbQueries := models.New(db)
 	ctx := context.Background()
 	accountsToColIndices := conf.AccountColumnIndices()
-	dataPath, err := dbQueries.ReadSettingByName(ctx, "data-dir")
+	dataPath, _, _, err := getDataPaths()
 	if err != nil {
-		return fmt.Errorf("error getting data directory: %w", err)
+		return err
 	}
 	dataPath, err = filepath.Abs(dataPath)
 	if err != nil {

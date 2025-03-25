@@ -32,7 +32,7 @@ the database file is in a different location than the default (~/trackit-data), 
 to point to where the trackit.db is.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		verbose, _ = rootCmd.PersistentFlags().GetBool("verbose")
-		dataPath, configPath, dbPath, err := getDataPaths()
+		_, configPath, dbPath, err := getDataPaths()
 		if err != nil {
 			return err
 		}
@@ -64,19 +64,6 @@ to point to where the trackit.db is.`,
 
 		queries := models.New(tx)
 		ctx := context.Background()
-		_, err = queries.ReadSettingByName(ctx, "data-dir")
-		if err != nil {
-			if err == sql.ErrNoRows {
-				// Only create setting if it doesn't already exist.
-				err = queries.CreateSetting(ctx, models.CreateSettingParams{Name: "data-dir", Value: dataPath})
-			} else {
-				return fmt.Errorf("error reading data-dir from settings")
-			}
-		}
-		if err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error setting data path: %w", err)
-		}
 		logLn("initialized accounts", verbose)
 
 		if err = initCategories(ctx, conf, queries); err != nil {
@@ -84,11 +71,6 @@ to point to where the trackit.db is.`,
 			return fmt.Errorf("error initializing categories: %w", err)
 		}
 		logLn("initialized categories", verbose)
-
-		if err := queries.CreateSetting(ctx, models.CreateSettingParams{Name: "version", Value: cmd.Version}); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("error setting version in DB: %w", err)
-		}
 		logLn("succesfully completed initialization", verbose)
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("error committing transaction: %w", err)

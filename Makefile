@@ -29,6 +29,7 @@ all: copy-schema sqlc-generate build build-windows build-ubantu
 .PHONY: sqlc-generate
 sqlc-generate:
 	@echo "generating sqlc stubs"
+	rm -rf db/models/*
 	sqlc generate
 
 # Copy schema.sql from internal/db to cmd/schema.sql
