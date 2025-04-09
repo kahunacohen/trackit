@@ -19,7 +19,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const skipText = "Skip categorizing this transaction"
+const (
+	exitText = "Exit"
+	skipText = "Skip categorizing this transaction"
+)
 
 var categoryNames []string
 
@@ -66,6 +69,7 @@ trackit categorize <id>`,
 		for _, category := range categories {
 			categoryMap[category.Name] = category.ID
 		}
+		categoryNames = append(categoryNames, exitText)
 		categoryNames = append(categoryNames, skipText)
 		for _, category := range categories {
 			categoryNames = append(categoryNames, category.Name)
@@ -98,12 +102,44 @@ trackit categorize <id>`,
 					Searcher:          searcher,
 				}
 				_, categoryNameResult, err := prompt.Run()
+
 				if err != nil {
 					return fmt.Errorf("prompt failed %w", err)
 				}
+
+				if categoryNameResult == exitText {
+					break
+				}
+
+				ignorePrompt := promptui.Prompt{
+					Label: "Do you want to ignore this transaction for summing purposes? (y/n)",
+					Validate: func(input string) error {
+						input = strings.ToLower(input)
+						if input != "y" && input != "n" {
+							return fmt.Errorf("entered an invalid value: '%s'", input)
+						}
+						return nil
+					},
+				}
+
+				ignoreInput, err := ignorePrompt.Run()
+				if err != nil {
+					return fmt.Errorf("error prompting for ignore: %s", err)
+				}
+
+				if ignoreInput == "y" {
+					err := queries.UpdateTransactionIgnore(ctx, models.UpdateTransactionIgnoreParams{
+						ID:                transaction.TransactionID,
+						IgnoreWhenSumming: 1})
+					if err != nil {
+						return fmt.Errorf("error setting transaction to ignore: %w", err)
+					}
+				}
+
 				if categoryNameResult == skipText {
 					continue
 				}
+
 				err = queries.UpdateTransactionCategory(ctx, models.UpdateTransactionCategoryParams{
 					CategoryID: sql.NullInt64{Valid: true, Int64: categoryMap[categoryNameResult]},
 					ID:         transaction.TransactionID})
